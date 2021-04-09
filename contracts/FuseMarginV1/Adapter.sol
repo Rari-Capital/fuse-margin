@@ -10,8 +10,8 @@ import { IUniswapV2Factory } from "@uniswap/v2-core/contracts/interfaces/IUniswa
 import { ISoloMargin } from "../interfaces/ISoloMargin.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { DYDXDataTypes } from "../libraries/DYDXDataTypes.sol";
-import { CErc20 } from "../interfaces/CErc20.sol";
-import { Comptroller } from "../interfaces/Comptroller.sol";
+import { IPositionV1 } from "../interfaces/IPositionV1.sol";
+import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Aave flash loan contract
@@ -49,20 +49,46 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
     }
 
     function _mintAndRedeem(
+        address position,
         address comptroller,
         address base,
         address cBase,
+        address quote,
         address cQuote,
         uint256 depositAmount,
         uint256 borrowAmount
     ) internal {
-        IERC20(base).safeApprove(cBase, depositAmount);
-        CErc20(cBase).mint(depositAmount);
-
-        address[] memory cTokens = new address[](1);
-        cTokens[0] = cBase;
-        Comptroller(comptroller).enterMarkets(cTokens);
-
-        CErc20(cQuote).borrow(borrowAmount);
+        if (CErc20Interface(cBase).isCEther()) {
+            IPositionV1(position).mintPayableAndBorrow{ value: depositAmount }(
+                comptroller,
+                cBase,
+                quote,
+                cQuote,
+                borrowAmount
+            );
+        } else {
+            if (CErc20Interface(cQuote).isCEther()) {
+                IERC20(base).safeTransfer(position, depositAmount);
+                IPositionV1(position).mintAndBorrowPayable(
+                    comptroller,
+                    base,
+                    cBase,
+                    cQuote,
+                    depositAmount,
+                    borrowAmount
+                );
+            } else {
+                IERC20(base).safeTransfer(position, depositAmount);
+                IPositionV1(position).mintAndBorrow(
+                    comptroller,
+                    base,
+                    cBase,
+                    quote,
+                    cQuote,
+                    depositAmount,
+                    borrowAmount
+                );
+            }
+        }
     }
 }

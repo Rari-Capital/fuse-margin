@@ -27,6 +27,7 @@ abstract contract Uniswap is Adapter {
     ) external override {
         require(sender == address(this), "Uniswap: Only this contract may initiate");
         (
+            address position,
             address comptroller,
             address base,
             address cBase,
@@ -35,7 +36,7 @@ abstract contract Uniswap is Adapter {
             address pairToken,
             uint256 providedAmount,
             bytes memory exchangeData
-        ) = abi.decode(data, (address, address, address, address, address, address, uint256, bytes));
+        ) = abi.decode(data, (address, address, address, address, address, address, address, uint256, bytes));
         require(
             msg.sender == uniswapFactory.getPair(quote, pairToken),
             "Uniswap: only permissioned UniswapV2 pair can call"

@@ -40,6 +40,7 @@ contract FuseMarginV1 is Uniswap, DYDX {
         IUniswapV2Pair pair,
         address base,
         address quote,
+        address pairToken,
         uint256 providedAmount,
         uint256 borrowAmount,
         bytes calldata exchangeData
