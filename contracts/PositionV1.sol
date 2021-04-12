@@ -34,7 +34,7 @@ contract PositionV1 is IPositionV1, Initializable {
         (bool success, bytes memory result) = target.call{ value: msg.value }(callData);
     }
 
-    function transferERC20(
+    function transferToken(
         address token,
         address to,
         uint256 amount
@@ -55,12 +55,16 @@ contract PositionV1 is IPositionV1, Initializable {
         CErc20Interface(cBase).mint(depositAmount);
     }
 
-    function mintPayable(address cBase) external payable override onlyMargin {
+    function mintETH(address cBase) external payable override onlyMargin {
         CEtherInterface(cBase).mint{ value: msg.value }();
     }
 
     function enterMarkets(address comptroller, address[] calldata cTokens) external override onlyMargin {
         ComptrollerInterface(comptroller).enterMarkets(cTokens);
+    }
+
+    function exitMarket(address comptroller, address cToken) external override onlyMargin {
+        ComptrollerInterface(comptroller).exitMarket(cToken);
     }
 
     function borrow(
@@ -72,9 +76,50 @@ contract PositionV1 is IPositionV1, Initializable {
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);
     }
 
-    function borrowPayable(address cQuote, uint256 borrowAmount) external override onlyMargin {
+    function borrowETH(address cQuote, uint256 borrowAmount) external override onlyMargin {
         CEtherInterface(cQuote).borrow(borrowAmount);
         payable(msg.sender).transfer(borrowAmount);
+    }
+
+    function repayBorrow(
+        address quote,
+        address cQuote,
+        uint256 repayAmount
+    ) external override onlyMargin {
+        IERC20(quote).safeApprove(cQuote, repayAmount);
+        CErc20Interface(cQuote).repayBorrow(repayAmount);
+    }
+
+    function repayBorrowETH(address cQuote) external payable override onlyMargin {
+        CEtherInterface(cQuote).repayBorrow{ value: msg.value }();
+    }
+
+    function redeem(
+        address base,
+        address cBase,
+        uint256 redeemTokens
+    ) external override onlyMargin {
+        CErc20Interface(cBase).redeem(redeemTokens);
+        IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
+    }
+
+    function redeemETH(address cBase, uint256 redeemTokens) external override onlyMargin {
+        CErc20Interface(cBase).redeem(redeemTokens);
+        payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function redeemUnderlying(
+        address base,
+        address cBase,
+        uint256 redeemAmount
+    ) external override onlyMargin {
+        CErc20Interface(cBase).redeem(redeemAmount);
+        IERC20(base).safeTransfer(msg.sender, redeemAmount);
+    }
+
+    function redeemUnderlyingETH(address cBase, uint256 redeemAmount) external override onlyMargin {
+        CEtherInterface(cBase).redeemUnderlying(redeemAmount);
+        payable(msg.sender).transfer(redeemAmount);
     }
 
     function mintAndBorrow(
@@ -97,7 +142,7 @@ contract PositionV1 is IPositionV1, Initializable {
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);
     }
 
-    function mintPayableAndBorrow(
+    function mintETHAndBorrow(
         address comptroller,
         address cBase,
         address quote,
@@ -114,7 +159,7 @@ contract PositionV1 is IPositionV1, Initializable {
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);
     }
 
-    function mintAndBorrowPayable(
+    function mintAndBorrowETH(
         address comptroller,
         address base,
         address cBase,

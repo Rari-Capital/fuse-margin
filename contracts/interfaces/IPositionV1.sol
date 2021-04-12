@@ -13,7 +13,7 @@ interface IPositionV1 {
         payable
         returns (bool success, bytes memory result);
 
-    function transferERC20(
+    function transferToken(
         address token,
         address to,
         uint256 amount
@@ -27,9 +27,11 @@ interface IPositionV1 {
         uint256 depositAmount
     ) external;
 
-    function mintPayable(address cBase) external payable;
+    function mintETH(address cBase) external payable;
 
     function enterMarkets(address comptroller, address[] calldata cTokens) external;
+
+    function exitMarket(address comptroller, address cToken) external;
 
     function borrow(
         address quote,
@@ -37,7 +39,31 @@ interface IPositionV1 {
         uint256 borrowAmount
     ) external;
 
-    function borrowPayable(address cQuote, uint256 borrowAmount) external;
+    function borrowETH(address cQuote, uint256 borrowAmount) external;
+
+    function repayBorrow(
+        address quote,
+        address cQuote,
+        uint256 repayAmount
+    ) external;
+
+    function repayBorrowETH(address cQuote) external payable;
+
+    function redeem(
+        address base,
+        address cBase,
+        uint256 redeemTokens
+    ) external;
+
+    function redeemETH(address cBase, uint256 redeemTokens) external;
+
+    function redeemUnderlying(
+        address base,
+        address cBase,
+        uint256 redeemAmount
+    ) external;
+
+    function redeemUnderlyingETH(address cBase, uint256 redeemAmount) external;
 
     function mintAndBorrow(
         address comptroller,
@@ -49,7 +75,7 @@ interface IPositionV1 {
         uint256 borrowAmount
     ) external;
 
-    function mintPayableAndBorrow(
+    function mintETHAndBorrow(
         address comptroller,
         address cBase,
         address quote,
@@ -57,7 +83,7 @@ interface IPositionV1 {
         uint256 borrowAmount
     ) external payable;
 
-    function mintAndBorrowPayable(
+    function mintAndBorrowETH(
         address comptroller,
         address base,
         address cBase,

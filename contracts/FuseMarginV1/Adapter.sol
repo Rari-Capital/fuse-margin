@@ -37,9 +37,16 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         }
     }
 
-    function _swap(address base, bytes memory exchangeData) internal returns (uint256) {
+    function _swap(
+        address base,
+        address quote,
+        uint256 amount,
+        bytes memory exchangeData
+    ) internal returns (uint256) {
         uint256 initialBalance = IERC20(base).balanceOf(address(this));
         (address exchange, bytes memory data) = abi.decode(exchangeData, (address, bytes));
+
+        IERC20(quote).safeApprove(exchange, amount);
 
         (bool success, ) = exchange.call(data);
         if (!success) revert("Adapter: Swap failed");
@@ -59,7 +66,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         uint256 borrowAmount
     ) internal {
         if (CErc20Interface(cBase).isCEther()) {
-            IPositionV1(position).mintPayableAndBorrow{ value: depositAmount }(
+            IPositionV1(position).mintETHAndBorrow{ value: depositAmount }(
                 comptroller,
                 cBase,
                 quote,
@@ -69,7 +76,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         } else {
             if (CErc20Interface(cQuote).isCEther()) {
                 IERC20(base).safeTransfer(position, depositAmount);
-                IPositionV1(position).mintAndBorrowPayable(
+                IPositionV1(position).mintAndBorrowETH(
                     comptroller,
                     base,
                     cBase,

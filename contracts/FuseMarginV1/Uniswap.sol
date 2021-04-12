@@ -34,7 +34,6 @@ abstract contract Uniswap is Adapter {
             address quote,
             address cQuote,
             address pairToken,
-            uint256 borrowAmount,
             uint256 providedAmount,
             bytes memory exchangeData
         ) = abi.decode(data, (address, address, address, address, address, address, address, uint256, bytes));
@@ -44,9 +43,9 @@ abstract contract Uniswap is Adapter {
         );
         uint256 amount = amount0 > 0 ? amount0 : amount1;
 
-        uint256 depositAmount = _swap(base, exchangeData);
+        uint256 depositAmount = _swap(base, quote, amount, exchangeData);
 
-        _mintAndRedeem(position, comptroller, base, cBase, quote, cQuote, depositAmount, borrowAmount);
+        _mintAndRedeem(position, comptroller, base, cBase, quote, cQuote, depositAmount, providedAmount);
 
         // Approve the pair contract to pull the owed amount + flashFee
         IERC20(quote).transfer(msg.sender, amount.add(amount.mul(3).div(997).add(1)));

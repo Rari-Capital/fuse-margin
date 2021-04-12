@@ -43,6 +43,7 @@ contract FuseMarginV1 is Uniswap, DYDX {
         address pairToken,
         uint256 providedAmount,
         uint256 borrowAmount,
+        bytes calldata fusePool,
         bytes calldata exchangeData
     ) external returns (uint256) {
         IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
