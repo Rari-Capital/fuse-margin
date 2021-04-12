@@ -10,7 +10,7 @@ import { IUniswapV2Factory } from "@uniswap/v2-core/contracts/interfaces/IUniswa
 import { ISoloMargin } from "../interfaces/ISoloMargin.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { DYDXDataTypes } from "../libraries/DYDXDataTypes.sol";
-import { IPositionV1 } from "../interfaces/IPositionV1.sol";
+import { IPosition } from "../interfaces/IPosition.sol";
 import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
@@ -66,7 +66,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         uint256 borrowAmount
     ) internal {
         if (CErc20Interface(cBase).isCEther()) {
-            IPositionV1(position).mintETHAndBorrow{ value: depositAmount }(
+            IPosition(position).mintETHAndBorrow{ value: depositAmount }(
                 comptroller,
                 cBase,
                 quote,
@@ -76,25 +76,10 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         } else {
             if (CErc20Interface(cQuote).isCEther()) {
                 IERC20(base).safeTransfer(position, depositAmount);
-                IPositionV1(position).mintAndBorrowETH(
-                    comptroller,
-                    base,
-                    cBase,
-                    cQuote,
-                    depositAmount,
-                    borrowAmount
-                );
+                IPosition(position).mintAndBorrowETH(comptroller, base, cBase, cQuote, depositAmount, borrowAmount);
             } else {
                 IERC20(base).safeTransfer(position, depositAmount);
-                IPositionV1(position).mintAndBorrow(
-                    comptroller,
-                    base,
-                    cBase,
-                    quote,
-                    cQuote,
-                    depositAmount,
-                    borrowAmount
-                );
+                IPosition(position).mintAndBorrow(comptroller, base, cBase, quote, cQuote, depositAmount, borrowAmount);
             }
         }
     }

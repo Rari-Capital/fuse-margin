@@ -13,7 +13,7 @@ import { IFuseMargin } from "./interfaces/IFuseMargin.sol";
 import { Adapter } from "./FuseMarginV1/Adapter.sol";
 import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
 import { DYDX } from "./FuseMarginV1/DYDX.sol";
-import { IPositionV1 } from "./interfaces/IPositionV1.sol";
+import { IPosition } from "./interfaces/IPosition.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
@@ -56,7 +56,7 @@ contract FuseMarginV1 is Uniswap, DYDX {
 
     function _newPosition() internal returns (address newPosition) {
         address newPosition = Clones.clone(positionImplementation);
-        IPositionV1(newPosition).initialize(fuseMarginController);
+        IPosition(newPosition).initialize(fuseMarginController);
     }
 
     function _getUniswapAmounts(

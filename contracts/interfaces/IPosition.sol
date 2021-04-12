@@ -3,7 +3,7 @@ pragma solidity ^0.7.6;
 
 import { IFuseMarginController } from "./IFuseMarginController.sol";
 
-interface IPositionV1 {
+interface IPosition {
     function fuseMarginController() external returns (IFuseMarginController);
 
     function initialize(IFuseMarginController _fuseMarginController) external;

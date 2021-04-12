@@ -8,9 +8,9 @@ import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 import { CErc20Interface } from "./interfaces/CErc20Interface.sol";
 import { CEtherInterface } from "./interfaces/CEtherInterface.sol";
 import { ComptrollerInterface } from "./interfaces/ComptrollerInterface.sol";
-import { IPositionV1 } from "./interfaces/IPositionV1.sol";
+import { IPosition } from "./interfaces/IPosition.sol";
 
-contract PositionV1 is IPositionV1, Initializable {
+contract Position is IPosition, Initializable {
     using SafeERC20 for IERC20;
 
     IFuseMarginController public override fuseMarginController;
