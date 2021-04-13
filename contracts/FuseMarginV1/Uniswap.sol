@@ -44,7 +44,6 @@ abstract contract Uniswap is Adapter {
         uint256 amount = amount0 > 0 ? amount0 : amount1;
 
         uint256 depositAmount = _swap(base, quote, amount, exchangeData);
-
         _mintAndRedeem(position, comptroller, base, cBase, quote, cQuote, depositAmount, providedAmount);
 
         // Approve the pair contract to pull the owed amount + flashFee

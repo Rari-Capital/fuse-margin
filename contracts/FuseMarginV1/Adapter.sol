@@ -65,22 +65,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         uint256 depositAmount,
         uint256 borrowAmount
     ) internal {
-        if (CErc20Interface(cBase).isCEther()) {
-            IPosition(position).mintETHAndBorrow{ value: depositAmount }(
-                comptroller,
-                cBase,
-                quote,
-                cQuote,
-                borrowAmount
-            );
-        } else {
-            if (CErc20Interface(cQuote).isCEther()) {
-                IERC20(base).safeTransfer(position, depositAmount);
-                IPosition(position).mintAndBorrowETH(comptroller, base, cBase, cQuote, depositAmount, borrowAmount);
-            } else {
-                IERC20(base).safeTransfer(position, depositAmount);
-                IPosition(position).mintAndBorrow(comptroller, base, cBase, quote, cQuote, depositAmount, borrowAmount);
-            }
-        }
+        IERC20(base).safeTransfer(position, depositAmount);
+        IPosition(position).mintAndBorrow(comptroller, base, cBase, quote, cQuote, depositAmount, borrowAmount);
     }
 }
