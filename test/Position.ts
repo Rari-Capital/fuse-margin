@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { FuseMarginController, FuseMarginController__factory } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
 
-describe("FuseMarginV1", () => {
+describe("Position", () => {
   let accounts: Signer[];
   let fuseMarginController: FuseMarginController;
 
