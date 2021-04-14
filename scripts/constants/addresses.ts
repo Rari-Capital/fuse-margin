@@ -6,3 +6,4 @@ export const fr4WBTC: string = "0x8ad7472631695420626C17EE0F8CEcfEA480cAFf";
 export const fr4USDC: string = "0x94C49563a3950424a2a7790c3eF5458A2A359C7e";
 export const fr4DAI: string = "0xCF90552eC3Db6143C83385FdD7bC96ef40F7ee44";
 export const fr4RGT: string = "0x0D90341220fb052a3C5E79D8fb1C6f26f9c9Fdc9";
+export const fr4ETH: string = "0x95FD9Ac18D72C84D47442181828202b9ec8419C6";
