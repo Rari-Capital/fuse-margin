@@ -54,7 +54,7 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         require(!approvedContracts[contractAddress], "FuseMarginController: Already exists");
         marginContracts.push(contractAddress);
         approvedContracts[contractAddress] = true;
-        marginContractsNum++;
+        marginContractsNum = marginContractsNum.add(1);
         emit AddMarginContract(contractAddress, msg.sender);
     }
 
@@ -63,7 +63,7 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     function removeMarginContract(address contractAddress) external override onlyOwner {
         require(approvedContracts[contractAddress], "FuseMarginController: Does not exist");
         approvedContracts[contractAddress] = false;
-        marginContractsNum--;
+        marginContractsNum = marginContractsNum.sub(1);
         emit RemoveMarginContract(contractAddress, msg.sender);
     }
 
