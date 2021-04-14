@@ -45,26 +45,22 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
     ) internal returns (uint256) {
         uint256 initialBalance = IERC20(base).balanceOf(address(this));
         (address exchange, bytes memory data) = abi.decode(exchangeData, (address, bytes));
-
         IERC20(quote).safeApprove(exchange, amount);
-
         (bool success, ) = exchange.call(data);
         if (!success) revert("Adapter: Swap failed");
-
         uint256 finalBalance = IERC20(base).balanceOf(address(this));
         return finalBalance.sub(initialBalance);
     }
 
     function _mintAndRedeem(
         address position,
-        address comptroller,
         address base,
-        address cBase,
         address quote,
-        address cQuote,
         uint256 depositAmount,
-        uint256 borrowAmount
+        uint256 borrowAmount,
+        bytes memory fusePool
     ) internal {
+        (address comptroller, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
         IERC20(base).safeTransfer(position, depositAmount);
         IPosition(position).mintAndBorrow(comptroller, base, cBase, quote, cQuote, depositAmount, borrowAmount);
     }

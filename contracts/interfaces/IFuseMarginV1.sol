@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.6;
 
-interface IFuseMargin {
+interface IFuseMarginV1 {
     function openPosition(
         address fusePool,
         address base,

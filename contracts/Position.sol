@@ -29,9 +29,10 @@ contract Position is IPosition, Initializable {
         payable
         override
         onlyMargin
-        returns (bool success, bytes memory result)
+        returns (bool, bytes memory)
     {
         (bool success, bytes memory result) = target.call{ value: msg.value }(callData);
+        return (success, result);
     }
 
     function transferToken(

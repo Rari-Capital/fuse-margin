@@ -28,25 +28,25 @@ abstract contract Uniswap is Adapter {
         require(sender == address(this), "Uniswap: Only this contract may initiate");
         (
             address position,
-            address comptroller,
             address base,
-            address cBase,
             address quote,
-            address cQuote,
             address pairToken,
             uint256 providedAmount,
+            bytes memory fusePool,
             bytes memory exchangeData
-        ) = abi.decode(data, (address, address, address, address, address, address, address, uint256, bytes));
+        ) = abi.decode(data, (address, address, address, address, uint256, bytes, bytes));
         require(
             msg.sender == uniswapFactory.getPair(quote, pairToken),
             "Uniswap: only permissioned UniswapV2 pair can call"
         );
         uint256 amount = amount0 > 0 ? amount0 : amount1;
-
         uint256 depositAmount = _swap(base, quote, amount, exchangeData);
-        _mintAndRedeem(position, comptroller, base, cBase, quote, cQuote, depositAmount, providedAmount);
+        _mintAndRedeem(position, base, quote, providedAmount.add(depositAmount), _uniswapLoanFees(amount), fusePool);
+        // Send the pair the owed amount + flashFee
+        IERC20(quote).transfer(msg.sender, _uniswapLoanFees(amount));
+    }
 
-        // Approve the pair contract to pull the owed amount + flashFee
-        IERC20(quote).transfer(msg.sender, amount.add(amount.mul(3).div(997).add(1)));
+    function _uniswapLoanFees(uint256 amount) internal pure returns (uint256) {
+        return amount.add(amount.mul(3).div(997).add(1));
     }
 }

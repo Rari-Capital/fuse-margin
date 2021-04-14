@@ -9,11 +9,12 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
-import { IFuseMargin } from "./interfaces/IFuseMargin.sol";
 import { Adapter } from "./FuseMarginV1/Adapter.sol";
 import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
 import { DYDX } from "./FuseMarginV1/DYDX.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
+
+import "hardhat/console.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
@@ -49,21 +50,22 @@ contract FuseMarginV1 is Uniswap, DYDX {
         IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
         address newPosition = _newPosition();
         (uint256 amount0Out, uint256 amount1Out) = _getUniswapAmounts(pair, quote, borrowAmount);
-        bytes memory data = abi.encode(base, quote, pairToken, providedAmount, fusePool, exchangeData);
+        bytes memory data = abi.encode(newPosition, base, quote, pairToken, providedAmount, fusePool, exchangeData);
         pair.swap(amount0Out, amount1Out, address(this), data);
         return fuseMarginController.newPosition(msg.sender, newPosition);
     }
 
-    function _newPosition() internal returns (address newPosition) {
+    function _newPosition() internal returns (address) {
         address newPosition = Clones.clone(positionImplementation);
         IPosition(newPosition).initialize(fuseMarginController);
+        return newPosition;
     }
 
     function _getUniswapAmounts(
         IUniswapV2Pair pair,
         address quote,
         uint256 borrowAmount
-    ) internal returns (uint256 amount0Out, uint256 amount1Out) {
+    ) internal view returns (uint256, uint256) {
         uint256 amount0Out = borrowAmount;
         uint256 amount1Out;
         address pairToken = pair.token1();
@@ -72,5 +74,6 @@ contract FuseMarginV1 is Uniswap, DYDX {
             amount1Out = borrowAmount;
             pairToken = pair.token0();
         }
+        return (amount0Out, amount1Out);
     }
 }
