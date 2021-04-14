@@ -81,15 +81,18 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         return approvedMarginContracts;
     }
 
-    /// @dev Gets all tokenIds a user holds
+    /// @dev Gets all tokenIds and positions a user holds
     /// @param user Address of user
     /// @return List of tokenIds the user holds
-    function tokensOfOwner(address user) external view override returns (uint256[] memory) {
+    /// @return List of positions the user holds
+    function tokensOfOwner(address user) external view override returns (uint256[] memory, address[] memory) {
         uint256[] memory tokens = new uint256[](balanceOf(user));
+        address[] memory addresses = new address[](balanceOf(user));
         for (uint256 i = 0; i < tokens.length; i++) {
             uint256 tokenId = tokenOfOwnerByIndex(user, i);
             tokens[i] = tokenId;
+            addresses[i] = positions[i];
         }
-        return tokens;
+        return (tokens, addresses);
     }
 }

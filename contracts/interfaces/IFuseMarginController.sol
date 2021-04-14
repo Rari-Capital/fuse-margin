@@ -34,10 +34,11 @@ interface IFuseMarginController {
     /// @return List of the addresses of the approved margin contracts
     function getMarginContracts() external view returns (address[] memory);
 
-    /// @dev Gets all tokenIds a user holds
+    /// @dev Gets all tokenIds and positions a user holds
     /// @param user Address of user
     /// @return List of tokenIds the user holds
-    function tokensOfOwner(address user) external view returns (uint256[] memory);
+    /// @return List of positions the user holds
+    function tokensOfOwner(address user) external view returns (uint256[] memory, address[] memory);
 
     /// @dev Gets a position address given an index (index = tokenId)
     /// @param tokenId Index of position
