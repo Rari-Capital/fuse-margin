@@ -10,6 +10,8 @@ import { CEtherInterface } from "./interfaces/CEtherInterface.sol";
 import { ComptrollerInterface } from "./interfaces/ComptrollerInterface.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
 
+import "hardhat/console.sol";
+
 contract Position is IPosition, Initializable {
     using SafeERC20 for IERC20;
 
@@ -133,13 +135,15 @@ contract Position is IPosition, Initializable {
         uint256 borrowAmount
     ) external override onlyMargin {
         IERC20(base).safeApprove(cBase, depositAmount);
-        CErc20Interface(cBase).mint(depositAmount);
+        require(CErc20Interface(cBase).mint(depositAmount) == 0, "Position: mint in mintAndBorrow failed");
 
-        address[] memory cTokens = new address[](1);
+        address[] memory cTokens = new address[](2);
         cTokens[0] = cBase;
-        ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        cTokens[1] = cQuote;
+        uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        require(errors[0] == 0 && errors[1] == 0, "Position: enterMarkets in mintAndBorrow failed");
 
-        CErc20Interface(cQuote).borrow(borrowAmount);
+        require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in mintAndBorrow failed");
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);
     }
 

@@ -9,3 +9,6 @@ export const fr4RGTAddress: string = "0x0D90341220fb052a3C5E79D8fb1C6f26f9c9Fdc9
 export const fr4ETHAddress: string = "0x95FD9Ac18D72C84D47442181828202b9ec8419C6";
 export const daiAddress: string = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 export const wbtcAddress: string = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
+export const daiUNIV2Address: string = "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11";
+export const impersonateAddress: string = "0x0F4ee9631f4be0a63756515141281A3E2B293Bbe";
+export const wethAddress: string = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";

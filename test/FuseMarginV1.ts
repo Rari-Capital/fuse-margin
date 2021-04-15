@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 import fetch from "node-fetch";
@@ -6,12 +6,24 @@ import {
   FuseMarginController,
   FuseMarginV1,
   Position,
+  ERC20,
   FuseMarginController__factory,
   FuseMarginV1__factory,
   Position__factory,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
-import { soloMarginAddress, uniswapFactoryAddress, daiAddress, wbtcAddress } from "../scripts/constants/addresses";
+import {
+  soloMarginAddress,
+  uniswapFactoryAddress,
+  daiAddress,
+  wbtcAddress,
+  impersonateAddress,
+  fusePool4,
+  fr4WBTCAddress,
+  fr4DAIAddress,
+  daiUNIV2Address,
+  wethAddress,
+} from "../scripts/constants/addresses";
 
 describe("FuseMarginV1", () => {
   let accounts: Signer[];
@@ -20,6 +32,9 @@ describe("FuseMarginV1", () => {
   let fuseMarginController: FuseMarginController;
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
+
+  const wbtcProvidedAmount: BigNumber = BigNumber.from("10000000");
+  const daiBorrowAmount: BigNumber = BigNumber.from("200000000000000000000");
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -88,10 +103,45 @@ describe("FuseMarginV1", () => {
   });
 
   it("test 0x swap", async () => {
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [impersonateAddress],
+    });
+    const impersonateSigner: Signer = await ethers.provider.getSigner(impersonateAddress);
+
     const response = await fetch(
-      `https://api.0x.org/swap/v1/quote?sellToken=${daiAddress}&buyToken=${wbtcAddress}&sellAmount=${"1000000000000000000000"}`,
+      `https://api.0x.org/swap/v1/quote?sellToken=${daiAddress}&buyToken=${wbtcAddress}&sellAmount=${daiBorrowAmount.toString()}&slippagePercentage=1`,
     );
     const quote = await response.json();
-    console.log(quote);
+    const exchangeData = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quote.to, quote.data]);
+
+    const fusePool = ethers.utils.defaultAbiCoder.encode(
+      ["address", "address", "address"],
+      [fusePool4, fr4WBTCAddress, fr4DAIAddress],
+    );
+
+    const WBTC: ERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+      wbtcAddress,
+    )) as ERC20;
+    await WBTC.connect(impersonateSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
+
+    await fuseMarginV1
+      .connect(impersonateSigner)
+      .openPositionBaseUniswap(
+        daiUNIV2Address,
+        wbtcAddress,
+        daiAddress,
+        wethAddress,
+        wbtcProvidedAmount,
+        daiBorrowAmount,
+        fusePool,
+        exchangeData,
+      );
+
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [impersonateAddress],
+    });
   });
 });
