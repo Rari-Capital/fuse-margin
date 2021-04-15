@@ -33,8 +33,8 @@ describe("FuseMarginV1", () => {
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
 
-  const wbtcProvidedAmount: BigNumber = BigNumber.from("10000000");
-  const daiBorrowAmount: BigNumber = BigNumber.from("200000000000000000000");
+  const wbtcProvidedAmount: BigNumber = BigNumber.from("50000000");
+  const daiBorrowAmount: BigNumber = BigNumber.from("3000000000000000000000");
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -108,12 +108,10 @@ describe("FuseMarginV1", () => {
       params: [impersonateAddress],
     });
     const impersonateSigner: Signer = await ethers.provider.getSigner(impersonateAddress);
-
-    const response = await fetch(
-      `https://api.0x.org/swap/v1/quote?sellToken=${daiAddress}&buyToken=${wbtcAddress}&sellAmount=${daiBorrowAmount.toString()}&slippagePercentage=1`,
-    );
-    const quote = await response.json();
-    const exchangeData = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quote.to, quote.data]);
+    const quoteTo = "0xdef1c0ded9bec7f1a1670819833240f027b25eff";
+    const quoteData =
+      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be0000000000000000000000000000000000000000000000000000000000000004077d7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd000000000000000000000000100000000000000000000000000000000000001100000000000000000000000000000000000000000000006b7e6e86c26078bd19";
+    const exchangeData = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quoteTo, quoteData]);
 
     const fusePool = ethers.utils.defaultAbiCoder.encode(
       ["address", "address", "address"],
