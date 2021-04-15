@@ -11,7 +11,7 @@ import {
   Position__factory,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
-import { soloMarginAddress, uniswapFactoryAddress } from "../scripts/constants/addresses";
+import { soloMarginAddress, uniswapFactoryAddress, daiAddress, wbtcAddress } from "../scripts/constants/addresses";
 
 describe("FuseMarginV1", () => {
   let accounts: Signer[];
@@ -88,7 +88,9 @@ describe("FuseMarginV1", () => {
   });
 
   it("test 0x swap", async () => {
-    const response = await fetch("https://api.0x.org/swap/v1/quote?sellToken=WETH&buyToken=DAI&sellAmount=10000000000");
+    const response = await fetch(
+      `https://api.0x.org/swap/v1/quote?sellToken=${daiAddress}&buyToken=${wbtcAddress}&sellAmount=${"1000000000000000000000"}`,
+    );
     const quote = await response.json();
     console.log(quote);
   });
