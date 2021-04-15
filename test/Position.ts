@@ -15,7 +15,7 @@ import { soloMarginAddress, uniswapFactoryAddress } from "../scripts/constants/a
 describe("Position", () => {
   let accounts: Signer[];
   let owner: Wallet;
-  let attacker: Wallet;
+  // let attacker: Wallet;
   let fuseMarginController: FuseMarginController;
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
@@ -23,7 +23,7 @@ describe("Position", () => {
   beforeEach(async () => {
     accounts = await ethers.getSigners();
     owner = <Wallet>accounts[0];
-    attacker = <Wallet>accounts[1];
+    // attacker = <Wallet>accounts[1];
 
     const fuseMarginControllerFactory: FuseMarginController__factory = (await ethers.getContractFactory(
       "contracts/FuseMarginController.sol:FuseMarginController",

@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
+import fetch from "node-fetch";
 import {
   FuseMarginController,
   FuseMarginV1,
@@ -15,7 +16,7 @@ import { soloMarginAddress, uniswapFactoryAddress } from "../scripts/constants/a
 describe("FuseMarginV1", () => {
   let accounts: Signer[];
   let owner: Wallet;
-  let attacker: Wallet;
+  // let attacker: Wallet;
   let fuseMarginController: FuseMarginController;
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
@@ -23,7 +24,7 @@ describe("FuseMarginV1", () => {
   beforeEach(async () => {
     accounts = await ethers.getSigners();
     owner = <Wallet>accounts[0];
-    attacker = <Wallet>accounts[1];
+    // attacker = <Wallet>accounts[1];
 
     const fuseMarginControllerFactory: FuseMarginController__factory = (await ethers.getContractFactory(
       "contracts/FuseMarginController.sol:FuseMarginController",
@@ -84,5 +85,11 @@ describe("FuseMarginV1", () => {
     expect(getFuseMarginERC721).to.equal(fuseMarginController.address);
     const getPositionImplementation: string = await fuseMarginV1.positionImplementation();
     expect(getPositionImplementation).to.equal(position.address);
+  });
+
+  it("test 0x swap", async () => {
+    const response = await fetch("https://api.0x.org/swap/v1/quote?sellToken=WETH&buyToken=DAI&sellAmount=10000000000");
+    const quote = await response.json();
+    console.log(quote);
   });
 });
