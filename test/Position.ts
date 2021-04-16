@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 import {
@@ -10,7 +10,7 @@ import {
   Position__factory,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
-import { soloMarginAddress, uniswapFactoryAddress } from "../scripts/constants/addresses";
+import { soloMarginAddress, uniswapFactoryAddress, impersonateAddress } from "../scripts/constants/addresses";
 
 describe("Position", () => {
   let accounts: Signer[];
@@ -18,6 +18,7 @@ describe("Position", () => {
   let attacker: Wallet;
   let position: Position;
   let fuseMarginController: FuseMarginController;
+  let impersonateAddressSigner: Signer;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -40,6 +41,19 @@ describe("Position", () => {
     position = await positionFactory.deploy();
     await position.initialize(fuseMarginController.address);
     await fuseMarginController.addMarginContract(attacker.address);
+
+    impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [impersonateAddress],
+    });
+  });
+
+  afterEach(async () => {
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [impersonateAddress],
+    });
   });
 
   it("should initialize", async () => {
@@ -146,4 +160,6 @@ describe("Position", () => {
     ).to.be.revertedWith("Position: Not approved contract");
     // add return value to funcs in Position
   });
+
+  it("should perform proxy call", async () => {});
 });
