@@ -50,7 +50,7 @@ contract FuseMarginV1 is Uniswap, DYDX {
         IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
         address newPosition = _newPosition();
         (uint256 amount0Out, uint256 amount1Out) = _getUniswapAmounts(pair, quote, borrowAmount);
-        bytes memory data = abi.encode(newPosition, base, quote, pairToken, providedAmount, fusePool, exchangeData);
+        bytes memory data = abi.encode(newPosition, base, quote, pairToken, fusePool, exchangeData);
         pair.swap(amount0Out, amount1Out, address(this), data);
         return fuseMarginController.newPosition(msg.sender, newPosition);
     }

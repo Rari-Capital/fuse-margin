@@ -171,4 +171,13 @@ describe("FuseMarginController", () => {
       "FuseMarginController: Does not exist",
     );
   });
+
+  it("should create new positions", async () => {
+    await fuseMarginController.addMarginContract(attacker.address);
+
+    await expect(fuseMarginController.positions(BigNumber.from(0))).to.be.reverted;
+    const getBalanceOf0 = await fuseMarginController.balanceOf(owner.address);
+    expect(getBalanceOf0).to.equal(BigNumber.from(0));
+    await fuseMarginController.connect(attacker).newPosition(owner.address, position.address);
+  })
 });

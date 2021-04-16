@@ -31,17 +31,16 @@ abstract contract Uniswap is Adapter {
             address base,
             address quote,
             address pairToken,
-            uint256 providedAmount,
             bytes memory fusePool,
             bytes memory exchangeData
-        ) = abi.decode(data, (address, address, address, address, uint256, bytes, bytes));
+        ) = abi.decode(data, (address, address, address, address, bytes, bytes));
         require(
             msg.sender == uniswapFactory.getPair(quote, pairToken),
             "Uniswap: only permissioned UniswapV2 pair can call"
         );
         uint256 amount = amount0 > 0 ? amount0 : amount1;
         uint256 depositAmount = _swap(base, quote, amount, exchangeData);
-        _mintAndRedeem(position, base, quote, providedAmount.add(depositAmount), _uniswapLoanFees(amount), fusePool);
+        _mintAndRedeem(position, base, quote, depositAmount, _uniswapLoanFees(amount), fusePool);
         // Send the pair the owed amount + flashFee
         IERC20(quote).transfer(msg.sender, _uniswapLoanFees(amount));
     }
