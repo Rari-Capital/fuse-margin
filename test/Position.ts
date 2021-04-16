@@ -90,20 +90,60 @@ describe("Position", () => {
     await expect(position.exitMarket(ethers.constants.AddressZero, ethers.constants.AddressZero)).to.be.revertedWith(
       "Position: Not approved contract",
     );
-    await expect(position.borrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
+    await expect(
+      position.borrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
     await expect(position.borrowETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
       "Position: Not approved contract",
     );
-    await expect(position.repayBorrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
+    await expect(
+      position.repayBorrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
     await expect(position.repayBorrowETH(ethers.constants.AddressZero)).to.be.revertedWith(
       "Position: Not approved contract",
     );
-
-    // finish revert testing
+    await expect(
+      position.redeem(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(position.redeemETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(
+      position.redeemUnderlying(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(position.redeemUnderlyingETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(
+      position.mintAndBorrow(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+        BigNumber.from(0),
+      ),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(
+      position.mintETHAndBorrow(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+      ),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(
+      position.mintAndBorrowETH(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+        BigNumber.from(0),
+      ),
+    ).to.be.revertedWith("Position: Not approved contract");
     // add return value to funcs in Position
   });
 });
