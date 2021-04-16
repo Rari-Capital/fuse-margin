@@ -196,7 +196,7 @@ describe("FuseMarginController", () => {
     expect(getPositionsOfOwner1).to.deep.equal([position.address]);
   });
 
-  it("should create new positions", async () => {
+  it("should close positions", async () => {
     await fuseMarginController.addMarginContract(attacker.address);
     await fuseMarginController.connect(attacker).newPosition(owner.address, position.address);
 
