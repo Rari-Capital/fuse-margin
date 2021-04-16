@@ -178,6 +178,9 @@ describe("FuseMarginController", () => {
     await expect(fuseMarginController.positions(BigNumber.from(0))).to.be.reverted;
     const getBalanceOf0 = await fuseMarginController.balanceOf(owner.address);
     expect(getBalanceOf0).to.equal(BigNumber.from(0));
+    await expect(fuseMarginController.ownerOf(BigNumber.from(0))).to.be.revertedWith(
+      "ERC721: owner query for nonexistent token",
+    );
     const [getTokenIdsOfOwner0, getPositionsOfOwner0] = await fuseMarginController.tokensOfOwner(owner.address);
     expect(getTokenIdsOfOwner0).to.deep.equal([]);
     expect(getPositionsOfOwner0).to.deep.equal([]);
@@ -212,6 +215,9 @@ describe("FuseMarginController", () => {
     expect(getPositions1).to.equal(position.address);
     const getBalanceOf1 = await fuseMarginController.balanceOf(owner.address);
     expect(getBalanceOf1).to.equal(BigNumber.from(0));
+    await expect(fuseMarginController.ownerOf(BigNumber.from(0))).to.be.revertedWith(
+      "ERC721: owner query for nonexistent token",
+    );
     const [getTokenIdsOfOwner1, getPositionsOfOwner1] = await fuseMarginController.tokensOfOwner(owner.address);
     expect(getTokenIdsOfOwner1).to.deep.equal([]);
     expect(getPositionsOfOwner1).to.deep.equal([]);
