@@ -90,5 +90,20 @@ describe("Position", () => {
     await expect(position.exitMarket(ethers.constants.AddressZero, ethers.constants.AddressZero)).to.be.revertedWith(
       "Position: Not approved contract",
     );
+    await expect(position.borrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(position.borrowETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(position.repayBorrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(position.repayBorrowETH(ethers.constants.AddressZero)).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+
+    // finish revert testing
+    // add return value to funcs in Position
   });
 });
