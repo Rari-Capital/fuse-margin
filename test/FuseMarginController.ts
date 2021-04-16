@@ -178,6 +178,42 @@ describe("FuseMarginController", () => {
     await expect(fuseMarginController.positions(BigNumber.from(0))).to.be.reverted;
     const getBalanceOf0 = await fuseMarginController.balanceOf(owner.address);
     expect(getBalanceOf0).to.equal(BigNumber.from(0));
+    const [getTokenIdsOfOwner0, getPositionsOfOwner0] = await fuseMarginController.tokensOfOwner(owner.address);
+    expect(getTokenIdsOfOwner0).to.deep.equal([]);
+    expect(getPositionsOfOwner0).to.deep.equal([]);
     await fuseMarginController.connect(attacker).newPosition(owner.address, position.address);
-  })
+    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions1).to.equal(position.address);
+    const getBalanceOf1 = await fuseMarginController.balanceOf(owner.address);
+    expect(getBalanceOf1).to.equal(BigNumber.from(1));
+    const getOwnerOf1 = await fuseMarginController.ownerOf(BigNumber.from(0));
+    expect(getOwnerOf1).to.equal(owner.address);
+    const [getTokenIdsOfOwner1, getPositionsOfOwner1] = await fuseMarginController.tokensOfOwner(owner.address);
+    expect(getTokenIdsOfOwner1).to.deep.equal([BigNumber.from(0)]);
+    expect(getPositionsOfOwner1).to.deep.equal([position.address]);
+  });
+
+  it("should create new positions", async () => {
+    await fuseMarginController.addMarginContract(attacker.address);
+    await fuseMarginController.connect(attacker).newPosition(owner.address, position.address);
+
+    const getPositions0 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions0).to.equal(position.address);
+    const getBalanceOf0 = await fuseMarginController.balanceOf(owner.address);
+    expect(getBalanceOf0).to.equal(BigNumber.from(1));
+    const getOwnerOf0 = await fuseMarginController.ownerOf(BigNumber.from(0));
+    expect(getOwnerOf0).to.equal(owner.address);
+    const [getTokenIdsOfOwner0, getPositionsOfOwner0] = await fuseMarginController.tokensOfOwner(owner.address);
+    expect(getTokenIdsOfOwner0).to.deep.equal([BigNumber.from(0)]);
+    expect(getPositionsOfOwner0).to.deep.equal([position.address]);
+    await fuseMarginController.connect(attacker).closePosition(BigNumber.from(0));
+
+    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions1).to.equal(position.address);
+    const getBalanceOf1 = await fuseMarginController.balanceOf(owner.address);
+    expect(getBalanceOf1).to.equal(BigNumber.from(0));
+    const [getTokenIdsOfOwner1, getPositionsOfOwner1] = await fuseMarginController.tokensOfOwner(owner.address);
+    expect(getTokenIdsOfOwner1).to.deep.equal([]);
+    expect(getPositionsOfOwner1).to.deep.equal([]);
+  });
 });
