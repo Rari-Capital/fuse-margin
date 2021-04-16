@@ -137,11 +137,10 @@ contract Position is IPosition, Initializable {
         IERC20(base).safeApprove(cBase, depositAmount);
         require(CErc20Interface(cBase).mint(depositAmount) == 0, "Position: mint in mintAndBorrow failed");
 
-        address[] memory cTokens = new address[](2);
+        address[] memory cTokens = new address[](1);
         cTokens[0] = cBase;
-        cTokens[1] = cQuote;
         uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
-        require((errors[0] == 0) && (errors[1] == 0), "Position: enterMarkets in mintAndBorrow failed");
+        require(errors[0] == 0, "Position: enterMarkets in mintAndBorrow failed");
 
         require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in mintAndBorrow failed");
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);

@@ -15,15 +15,14 @@ import { soloMarginAddress, uniswapFactoryAddress } from "../scripts/constants/a
 describe("Position", () => {
   let accounts: Signer[];
   let owner: Wallet;
-  // let attacker: Wallet;
-  let fuseMarginController: FuseMarginController;
+  let attacker: Wallet;
   let position: Position;
-  let fuseMarginV1: FuseMarginV1;
+  let fuseMarginController: FuseMarginController;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
     owner = <Wallet>accounts[0];
-    // attacker = <Wallet>accounts[1];
+    attacker = <Wallet>accounts[1];
 
     const fuseMarginControllerFactory: FuseMarginController__factory = (await ethers.getContractFactory(
       "contracts/FuseMarginController.sol:FuseMarginController",
@@ -40,20 +39,10 @@ describe("Position", () => {
     )) as Position__factory;
     position = await positionFactory.deploy();
     await position.initialize(fuseMarginController.address);
-    const fuseMarginV1Factory: FuseMarginV1__factory = (await ethers.getContractFactory(
-      "contracts/FuseMarginV1.sol:FuseMarginV1",
-      owner,
-    )) as FuseMarginV1__factory;
-    fuseMarginV1 = await fuseMarginV1Factory.deploy(
-      fuseMarginController.address,
-      position.address,
-      uniswapFactoryAddress,
-      soloMarginAddress,
-    );
-    await fuseMarginController.addMarginContract(fuseMarginV1.address);
+    await fuseMarginController.addMarginContract(attacker.address);
   });
 
-  it("constructor should initialize state variables", async () => {
+  it("should initialize", async () => {
     const getName: string = await fuseMarginController.name();
     expect(getName).to.equal(fuseMarginControllerName);
     const getSymbol: string = await fuseMarginController.symbol();
@@ -61,10 +50,10 @@ describe("Position", () => {
     const getOwner: string = await fuseMarginController.owner();
     expect(getOwner).to.equal(owner.address);
     const getMarginContracts: string = await fuseMarginController.marginContracts(BigNumber.from(0));
-    expect(getMarginContracts).to.equal(fuseMarginV1.address);
+    expect(getMarginContracts).to.equal(attacker.address);
     const getGetMarginContracts: string[] = await fuseMarginController.getMarginContracts();
-    expect(getGetMarginContracts).to.deep.equal([fuseMarginV1.address]);
-    const getApprovedContracts: boolean = await fuseMarginController.approvedContracts(fuseMarginV1.address);
+    expect(getGetMarginContracts).to.deep.equal([attacker.address]);
+    const getApprovedContracts: boolean = await fuseMarginController.approvedContracts(attacker.address);
     expect(getApprovedContracts).to.equal(true);
     const [getTokensOfOwner, getPositionsOfOwner]: [BigNumber[], string[]] = await fuseMarginController.tokensOfOwner(
       owner.address,
@@ -72,17 +61,34 @@ describe("Position", () => {
     expect(getTokensOfOwner).to.deep.equal([]);
     expect(getPositionsOfOwner).to.deep.equal([]);
 
-    const fuseMarginController0: string = await position.fuseMarginController();
-    expect(fuseMarginController0).to.equal(fuseMarginController.address);
-    const getUniswapFactory: string = await fuseMarginV1.uniswapFactory();
-    expect(getUniswapFactory).to.equal(uniswapFactoryAddress);
-    const getSoloMargin: string = await fuseMarginV1.soloMargin();
-    expect(getSoloMargin).to.equal(soloMarginAddress);
-    const getFuseMarginController1: string = await fuseMarginV1.fuseMarginController();
-    expect(getFuseMarginController1).to.equal(fuseMarginController.address);
-    const getFuseMarginERC721: string = await fuseMarginV1.fuseMarginERC721();
-    expect(getFuseMarginERC721).to.equal(fuseMarginController.address);
-    const getPositionImplementation: string = await fuseMarginV1.positionImplementation();
-    expect(getPositionImplementation).to.equal(position.address);
+    const getFuseMarginController0: string = await position.fuseMarginController();
+    expect(getFuseMarginController0).to.equal(fuseMarginController.address);
+    await expect(position.initialize(attacker.address)).to.be.revertedWith(
+      "Initializable: contract is already initialized",
+    );
+  });
+
+  it("should revert if not margin contract", async () => {
+    await expect(position.proxyCall(ethers.constants.AddressZero, "0x")).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(
+      position.transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(position.transferETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(
+      position.mint(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(position.mintETH(ethers.constants.AddressZero, { value: BigNumber.from(0) })).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(position.enterMarkets(ethers.constants.AddressZero, [])).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
+    await expect(position.exitMarket(ethers.constants.AddressZero, ethers.constants.AddressZero)).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
   });
 });
