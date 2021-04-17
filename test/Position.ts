@@ -8,6 +8,7 @@ import {
   FuseMarginController__factory,
   FuseMarginV1__factory,
   Position__factory,
+  IERC20,
   IWETH9,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
@@ -16,6 +17,7 @@ import {
   uniswapFactoryAddress,
   impersonateAddress,
   wethAddress,
+  daiAddress,
 } from "../scripts/constants/addresses";
 
 describe("Position", () => {
@@ -187,5 +189,26 @@ describe("Position", () => {
     expect(ethBalance3).to.equal(wethDepositAmount);
   });
 
-  it("should transfer ETH and tokens", async () => {});
+  it("should transfer ETH and tokens", async () => {
+    const ethDepositAmount = ethers.utils.parseEther("1");
+    await owner.sendTransaction({ to: position.address, value: ethDepositAmount })
+    const ethBalance1 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance1).to.equal(ethDepositAmount);
+    await position.connect(attacker).transferETH(owner.address, ethDepositAmount);
+    const ethBalance2 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance2).to.equal(BigNumber.from(0));
+
+    const DAI: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      daiAddress,
+    )) as IERC20;
+    await DAI.connect(impersonateAddressSigner).transfer(position.address, ethDepositAmount);
+    const daiBalance4 = await DAI.balanceOf(position.address);
+    expect(daiBalance4).to.equal(ethDepositAmount);
+    await position.connect(attacker).transferToken(DAI.address, owner.address, ethDepositAmount);
+    const daiBalance5 = await DAI.balanceOf(position.address);
+    expect(daiBalance5).to.equal(BigNumber.from(0));
+    const ownerBalance5 = await DAI.balanceOf(owner.address);
+    expect(ownerBalance5).to.equal(ethDepositAmount);
+  });
 });

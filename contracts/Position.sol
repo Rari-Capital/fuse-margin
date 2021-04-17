@@ -24,7 +24,7 @@ contract Position is IPosition, Initializable {
         _;
     }
 
-    fallback() external payable {}
+    receive() external payable {}
 
     function proxyCall(address target, bytes calldata callData)
         external
