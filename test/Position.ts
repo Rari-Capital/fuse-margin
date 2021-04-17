@@ -249,7 +249,7 @@ describe("Position", () => {
 
   it("should mint ERC20s and ETH", async () => {
     const fr4USDCBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
-    const mintAmountUSDC = ethers.utils.parseUnits("10000", await USDC.decimals());
+    const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
     const fr4USDCBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
