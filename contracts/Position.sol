@@ -10,8 +10,6 @@ import { CEtherInterface } from "./interfaces/CEtherInterface.sol";
 import { ComptrollerInterface } from "./interfaces/ComptrollerInterface.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
 
-import "hardhat/console.sol";
-
 contract Position is IPosition, Initializable {
     using SafeERC20 for IERC20;
 
@@ -24,6 +22,9 @@ contract Position is IPosition, Initializable {
     modifier onlyMargin() {
         require(fuseMarginController.approvedContracts(msg.sender), "Position: Not approved contract");
         _;
+    }
+
+    fallback() external payable {
     }
 
     function proxyCall(address target, bytes calldata callData)

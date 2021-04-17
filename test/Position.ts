@@ -8,9 +8,15 @@ import {
   FuseMarginController__factory,
   FuseMarginV1__factory,
   Position__factory,
+  IWETH9,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
-import { soloMarginAddress, uniswapFactoryAddress, impersonateAddress } from "../scripts/constants/addresses";
+import {
+  soloMarginAddress,
+  uniswapFactoryAddress,
+  impersonateAddress,
+  wethAddress,
+} from "../scripts/constants/addresses";
 
 describe("Position", () => {
   let accounts: Signer[];
@@ -161,5 +167,21 @@ describe("Position", () => {
     // add return value to funcs in Position
   });
 
-  it("should perform proxy call", async () => {});
+  it("should perform proxy call", async () => {
+    const WETH9: IWETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
+    const wethDepositCall: string = WETH9.interface.encodeFunctionData("deposit");
+    const wethDepositAmount = ethers.utils.parseEther("1");
+    await position.connect(attacker).proxyCall(WETH9.address, wethDepositCall, { value: wethDepositAmount });
+    const wethBalance1 = await WETH9.balanceOf(position.address);
+    expect(wethBalance1).to.equal(wethDepositAmount);
+
+    const wethWithdrawCall: string = WETH9.interface.encodeFunctionData("withdraw", [ wethDepositAmount ]);
+    const ethBalance2 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance2).to.equal(BigNumber.from(0));
+    await position.connect(attacker).proxyCall(WETH9.address,wethWithdrawCall);
+    const wethBalance3 = await WETH9.balanceOf(position.address);
+    expect(wethBalance3).to.equal(BigNumber.from(0));
+    const ethBalance3 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance3).to.equal(wethDepositAmount);
+  });
 });
