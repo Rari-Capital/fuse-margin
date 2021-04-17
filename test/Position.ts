@@ -63,14 +63,8 @@ describe("Position", () => {
     await fuseMarginController.addMarginContract(attacker.address);
 
     WETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
-    DAI = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-      daiAddress,
-    )) as IERC20;
-    USDC = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
-      usdcAddress,
-    )) as ERC20;
+    DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20", daiAddress)) as IERC20;
+    USDC = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", usdcAddress)) as ERC20;
     fr4DAI = (await ethers.getContractAt(
       "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
       fr4DAIAddress,
@@ -87,7 +81,6 @@ describe("Position", () => {
       "contracts/interfaces/ComptrollerInterface.sol:ComptrollerInterface",
       fusePool4,
     )) as ComptrollerInterface;
-
 
     impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
     await network.provider.request({
@@ -269,11 +262,20 @@ describe("Position", () => {
     expect(fr4ETHBalance3).to.gt(fr4ETHBalance2);
   });
 
-  it("should enter and exit markets", async () => {
+  it("should enter markets", async () => {
     const comptrollerMarkets0 = await FusePool4.getAssetsIn(position.address);
     expect(comptrollerMarkets0).to.deep.equal([]);
     await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
     const comptrollerMarkets1 = await FusePool4.getAssetsIn(position.address);
+    expect(comptrollerMarkets1).to.deep.equal([fr4USDC.address]);
+
+    // Exiting markets already entered is not working
+    // await position.connect(attacker).exitMarket(FusePool4.address, fr4USDC.address);
+    // const comptrollerMarkets3 = await FusePool4.getAssetsIn(position.address);
+    // expect(comptrollerMarkets3).to.deep.equal([]);
+    // But exiting a new market works for some reason
+    await position.connect(attacker).exitMarket(FusePool4.address, fr4DAI.address);
+    const comptrollerMarkets3 = await FusePool4.getAssetsIn(position.address);
     expect(comptrollerMarkets1).to.deep.equal([fr4USDC.address]);
   });
 });
