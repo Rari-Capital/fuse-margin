@@ -189,6 +189,19 @@ describe("Position", () => {
     expect(ethBalance3).to.equal(wethDepositAmount);
   });
 
+  it("should approve tokens", async () => {
+    const DAI: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      daiAddress,
+    )) as IERC20;
+    const daiApproval0 = await DAI.allowance(position.address, owner.address);
+    expect(daiApproval0).to.equal(BigNumber.from(0));
+    const ethDepositAmount = ethers.utils.parseEther("1");
+    await position.connect(attacker).approveToken(DAI.address, owner.address, ethDepositAmount);
+    const daiApproval1 = await DAI.allowance(position.address, owner.address);
+    expect(daiApproval1).to.equal(ethDepositAmount);
+  });
+
   it("should transfer ETH and tokens", async () => {
     const ethDepositAmount = ethers.utils.parseEther("1");
     await owner.sendTransaction({ to: position.address, value: ethDepositAmount })
