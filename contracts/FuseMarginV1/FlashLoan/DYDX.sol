@@ -5,9 +5,9 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { ISoloMargin } from "../interfaces/ISoloMargin.sol";
-import { DYDXDataTypes } from "../libraries/DYDXDataTypes.sol";
-import { Adapter } from "./Adapter.sol";
+import { ISoloMargin } from "../../interfaces/ISoloMargin.sol";
+import { DYDXDataTypes } from "../../libraries/DYDXDataTypes.sol";
+import { Adapter } from "../Adapter/Adapter.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title dYdX flash loan contract

@@ -7,11 +7,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import { IUniswapV2Factory } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import { ISoloMargin } from "../interfaces/ISoloMargin.sol";
-import { ICallee } from "../interfaces/ICallee.sol";
-import { DYDXDataTypes } from "../libraries/DYDXDataTypes.sol";
-import { IPosition } from "../interfaces/IPosition.sol";
-import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
+import { ISoloMargin } from "../../interfaces/ISoloMargin.sol";
+import { ICallee } from "../../interfaces/ICallee.sol";
+import { IPosition } from "../../interfaces/IPosition.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Aave flash loan contract

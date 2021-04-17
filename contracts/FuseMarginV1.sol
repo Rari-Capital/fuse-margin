@@ -9,9 +9,9 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
-import { Adapter } from "./FuseMarginV1/Adapter.sol";
-import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
-import { DYDX } from "./FuseMarginV1/DYDX.sol";
+import { Adapter } from "./FuseMarginV1/Adapter/Adapter.sol";
+import { Uniswap } from "./FuseMarginV1/FlashLoan/Uniswap.sol";
+import { DYDX } from "./FuseMarginV1/FlashLoan/DYDX.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
 
 /// @author Ganesh Gautham Elango
