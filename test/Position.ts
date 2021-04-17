@@ -3,10 +3,9 @@ import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 import {
   FuseMarginController,
-  FuseMarginV1,
   Position,
   FuseMarginController__factory,
-  FuseMarginV1__factory,
+  CEtherInterface,
   Position__factory,
   IERC20,
   ERC20,
@@ -20,6 +19,8 @@ import {
   wethAddress,
   daiAddress,
   fr4USDCAddress,
+  fr4DAIAddress,
+  fr4ETHAddress,
 } from "../scripts/constants/addresses";
 
 describe("Position", () => {
@@ -29,10 +30,12 @@ describe("Position", () => {
   let position: Position;
   let fuseMarginController: FuseMarginController;
   let impersonateAddressSigner: Signer;
-  let WETH9: IWETH9;
   let DAI: IERC20;
   let USDC: ERC20;
+  let WETH9: IWETH9;
+  let fr4DAI: CErc20Interface;
   let fr4USDC: CErc20Interface;
+  let fr4ETH: CEtherInterface;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -65,10 +68,19 @@ describe("Position", () => {
       "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
       usdcAddress,
     )) as ERC20;
+    fr4DAI = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4DAIAddress,
+    )) as CErc20Interface;
     fr4USDC = (await ethers.getContractAt(
       "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
       fr4USDCAddress,
     )) as CErc20Interface;
+    fr4ETH = (await ethers.getContractAt(
+      "contracts/interfaces/CEtherInterface.sol:CEtherInterface",
+      fr4ETHAddress,
+    )) as CEtherInterface;
+
 
     impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
     await network.provider.request({
@@ -242,5 +254,11 @@ describe("Position", () => {
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
     const fr4USDCBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
     expect(fr4USDCBalance1).to.be.gt(fr4USDCBalance0);
+
+    const fr4ETHBalance2 = await fr4ETH.balanceOfUnderlying(position.address);
+    const mintAmountETH = ethers.utils.parseEther("10");
+    await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
+    const fr4ETHBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
+    expect(fr4ETHBalance3).to.gt(fr4ETHBalance2);
   });
 });

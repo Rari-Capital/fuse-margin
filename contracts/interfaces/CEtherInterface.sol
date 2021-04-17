@@ -6,7 +6,7 @@ interface CEtherInterface {
 
     /*** User Interface ***/
 
-    function mint() external payable returns (uint256);
+    function mint() external payable;
 
     function redeem(uint256 redeemTokens) external returns (uint256);
 
@@ -14,9 +14,9 @@ interface CEtherInterface {
 
     function borrow(uint256 borrowAmount) external returns (uint256);
 
-    function repayBorrow() external payable returns (uint256);
+    function repayBorrow() external payable;
 
-    function repayBorrowBehalf(address borrower) external payable returns (uint256);
+    function repayBorrowBehalf(address borrower) external payable;
 
     function balanceOfUnderlying(address account) external view returns (uint);
 }

@@ -37,7 +37,7 @@ contract Position is PositionBase {
     }
 
     function mintETH(address cBase) external payable override onlyMargin {
-        require(CEtherInterface(cBase).mint{ value: msg.value }() == 0, "Position: mint in mintETH failed");
+        CEtherInterface(cBase).mint{ value: msg.value }();
     }
 
     function enterMarkets(address comptroller, address[] calldata cTokens) external override onlyMargin {
@@ -75,10 +75,7 @@ contract Position is PositionBase {
     }
 
     function repayBorrowETH(address cQuote) external payable override onlyMargin {
-        require(
-            CEtherInterface(cQuote).repayBorrow{ value: msg.value }() == 0,
-            "Position: repayBorrow in repayBorrowETH failed"
-        );
+        CEtherInterface(cQuote).repayBorrow{ value: msg.value }();
     }
 
     function redeem(
@@ -143,7 +140,7 @@ contract Position is PositionBase {
         address cQuote,
         uint256 borrowAmount
     ) external payable override onlyMargin {
-        require(CEtherInterface(cBase).mint{ value: msg.value }() == 0, "Position: mint in mintETHAndBorrow failed");
+        CEtherInterface(cBase).mint{ value: msg.value }();
 
         address[] memory cTokens = new address[](1);
         cTokens[0] = cBase;
