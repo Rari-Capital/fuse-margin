@@ -175,10 +175,10 @@ describe("Position", () => {
     const wethBalance1 = await WETH9.balanceOf(position.address);
     expect(wethBalance1).to.equal(wethDepositAmount);
 
-    const wethWithdrawCall: string = WETH9.interface.encodeFunctionData("withdraw", [ wethDepositAmount ]);
+    const wethWithdrawCall: string = WETH9.interface.encodeFunctionData("withdraw", [wethDepositAmount]);
     const ethBalance2 = await ethers.provider.getBalance(position.address);
     expect(ethBalance2).to.equal(BigNumber.from(0));
-    await position.connect(attacker).proxyCall(WETH9.address,wethWithdrawCall);
+    await position.connect(attacker).proxyCall(WETH9.address, wethWithdrawCall);
     const wethBalance3 = await WETH9.balanceOf(position.address);
     expect(wethBalance3).to.equal(BigNumber.from(0));
     const ethBalance3 = await ethers.provider.getBalance(position.address);
