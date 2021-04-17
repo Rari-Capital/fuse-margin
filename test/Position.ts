@@ -32,7 +32,7 @@ describe("Position", () => {
   let position: Position;
   let fuseMarginController: FuseMarginController;
   let impersonateAddressSigner: Signer;
-  let DAI: IERC20;
+  let DAI: ERC20;
   let USDC: ERC20;
   let WETH9: IWETH9;
   let fr4DAI: CErc20Interface;
@@ -63,7 +63,7 @@ describe("Position", () => {
     await fuseMarginController.addMarginContract(attacker.address);
 
     WETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
-    DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20", daiAddress)) as IERC20;
+    DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", daiAddress)) as ERC20;
     USDC = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", usdcAddress)) as ERC20;
     fr4DAI = (await ethers.getContractAt(
       "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
@@ -277,5 +277,19 @@ describe("Position", () => {
     await position.connect(attacker).exitMarket(FusePool4.address, fr4DAI.address);
     const comptrollerMarkets3 = await FusePool4.getAssetsIn(position.address);
     expect(comptrollerMarkets1).to.deep.equal([fr4USDC.address]);
+  });
+
+  it("should borrow ERC20s and ETH", async () => {
+    const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
+    await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
+    await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
+
+    const fr4DAIBalance2 = await fr4DAI.borrowBalanceCurrent(position.address);
+    expect(fr4DAIBalance2).to.equal(BigNumber.from(0));
+    const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
+    await position.connect(attacker).borrow(DAI.address, fr4DAI.address, borrowAmountDAI);
+    const fr4DAIBalance3 = await fr4DAI.borrowBalanceCurrent(position.address);
+    expect(fr4DAIBalance3).to.equal(borrowAmountDAI);
   });
 });

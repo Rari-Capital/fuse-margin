@@ -19,4 +19,6 @@ interface CErc20Interface {
     function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
 
     function balanceOfUnderlying(address account) external view returns (uint256);
+
+    function borrowBalanceCurrent(address account) external view returns (uint256);
 }
