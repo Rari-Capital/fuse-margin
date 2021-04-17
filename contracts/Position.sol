@@ -37,6 +37,14 @@ contract Position is IPosition, Initializable {
         return (success, result);
     }
 
+    function approveToken(
+        address token,
+        address to,
+        uint256 amount
+    ) external override onlyMargin {
+        IERC20(token).safeApprove(to, amount);
+    }
+
     function transferToken(
         address token,
         address to,
