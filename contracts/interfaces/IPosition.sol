@@ -12,7 +12,7 @@ interface IPosition {
         external
         payable
         returns (bool success, bytes memory result);
-    
+
     function approveToken(
         address token,
         address to,

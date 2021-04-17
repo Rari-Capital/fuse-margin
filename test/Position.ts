@@ -166,7 +166,6 @@ describe("Position", () => {
         BigNumber.from(0),
       ),
     ).to.be.revertedWith("Position: Not approved contract");
-    // add return value to funcs in Position
   });
 
   it("should perform proxy call", async () => {
@@ -204,7 +203,7 @@ describe("Position", () => {
 
   it("should transfer ETH and tokens", async () => {
     const ethDepositAmount = ethers.utils.parseEther("1");
-    await owner.sendTransaction({ to: position.address, value: ethDepositAmount })
+    await owner.sendTransaction({ to: position.address, value: ethDepositAmount });
     const ethBalance1 = await ethers.provider.getBalance(position.address);
     expect(ethBalance1).to.equal(ethDepositAmount);
     await position.connect(attacker).transferETH(owner.address, ethDepositAmount);
