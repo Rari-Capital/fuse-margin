@@ -321,5 +321,26 @@ describe("Position", () => {
     expect(daiBalance3).to.equal(borrowAmountDAI);
     const fr4DAIBalance3 = await fr4DAI.borrowBalanceCurrent(position.address);
     expect(fr4DAIBalance3).to.equal(borrowAmountDAI);
+
+    const ethBalance4 = await ethers.provider.getBalance(attacker.address);
+    const frETHBalance4 = await fr4ETH.borrowBalanceCurrent(position.address);
+    expect(frETHBalance4).to.equal(BigNumber.from(0));
+    const borrowAmountETH = ethers.utils.parseEther("2");
+    await position.connect(attacker).borrowETH(fr4ETH.address, borrowAmountETH);
+    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
+    expect(ethBalance5).to.be.gt(ethBalance4);
+    const frETHBalance5 = await fr4ETH.borrowBalanceCurrent(position.address);
+    expect(frETHBalance5).to.equal(borrowAmountETH);
+  });
+
+  it("should repay borrow ERC20s and ETH", async () => {
+    const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
+    await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
+    await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
+    const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
+    await position.connect(attacker).borrow(DAI.address, fr4DAI.address, borrowAmountDAI);
+    const borrowAmountETH = ethers.utils.parseEther("2");
+    await position.connect(attacker).borrowETH(fr4ETH.address, borrowAmountETH);
   });
 });
