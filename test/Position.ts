@@ -169,6 +169,8 @@ describe("Position", () => {
 
   it("should perform proxy call", async () => {
     const WETH9: IWETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
+    const wethBalance0 = await WETH9.balanceOf(position.address);
+    expect(wethBalance0).to.equal(BigNumber.from(0));
     const wethDepositCall: string = WETH9.interface.encodeFunctionData("deposit");
     const wethDepositAmount = ethers.utils.parseEther("1");
     await position.connect(attacker).proxyCall(WETH9.address, wethDepositCall, { value: wethDepositAmount });
