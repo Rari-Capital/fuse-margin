@@ -8,6 +8,8 @@ interface ComptrollerInterface {
 
     function exitMarket(address cToken) external returns (uint256);
 
+    function getAssetsIn(address account) external view returns (address[] memory);
+
     /*** Policy Hooks ***/
 
     function mintAllowed(

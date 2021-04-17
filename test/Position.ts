@@ -10,6 +10,7 @@ import {
   IERC20,
   ERC20,
   CErc20Interface,
+  ComptrollerInterface,
   IWETH9,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
@@ -18,6 +19,7 @@ import {
   impersonateAddress,
   wethAddress,
   daiAddress,
+  fusePool4,
   fr4USDCAddress,
   fr4DAIAddress,
   fr4ETHAddress,
@@ -36,6 +38,7 @@ describe("Position", () => {
   let fr4DAI: CErc20Interface;
   let fr4USDC: CErc20Interface;
   let fr4ETH: CEtherInterface;
+  let FusePool4: ComptrollerInterface;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -80,6 +83,10 @@ describe("Position", () => {
       "contracts/interfaces/CEtherInterface.sol:CEtherInterface",
       fr4ETHAddress,
     )) as CEtherInterface;
+    FusePool4 = (await ethers.getContractAt(
+      "contracts/interfaces/ComptrollerInterface.sol:ComptrollerInterface",
+      fusePool4,
+    )) as ComptrollerInterface;
 
 
     impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
@@ -260,5 +267,13 @@ describe("Position", () => {
     await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
     const fr4ETHBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
     expect(fr4ETHBalance3).to.gt(fr4ETHBalance2);
+  });
+
+  it("should enter and exit markets", async () => {
+    const comptrollerMarkets0 = await FusePool4.getAssetsIn(position.address);
+    expect(comptrollerMarkets0).to.deep.equal([]);
+    await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
+    const comptrollerMarkets1 = await FusePool4.getAssetsIn(position.address);
+    expect(comptrollerMarkets1).to.deep.equal([fr4USDC.address]);
   });
 });
