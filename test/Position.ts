@@ -432,6 +432,7 @@ describe("Position", () => {
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
     const fr4DAIBalance0 = await fr4DAI.borrowBalanceCurrent(position.address);
     expect(fr4DAIBalance0).to.equal(BigNumber.from(0));
+    const DAIBalance0 = await DAI.balanceOf(attacker.address);
     const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
     await position
       .connect(attacker)
@@ -448,11 +449,14 @@ describe("Position", () => {
     expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
     const fr4DAIBalance1 = await fr4DAI.borrowBalanceCurrent(position.address);
     expect(fr4DAIBalance1).to.equal(borrowAmountDAI);
+    const DAIBalance1 = await DAI.balanceOf(attacker.address);
+    expect(DAIBalance1).to.equal(DAIBalance0.add(borrowAmountDAI));
 
     const fr4USDCTokenBalance2 = await fr4USDC.balanceOfUnderlying(position.address);
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
     const fr4ETHBalance2 = await fr4ETH.borrowBalanceCurrent(position.address);
     expect(fr4ETHBalance2).to.equal(BigNumber.from(0));
+    const ethBalance2 = await ethers.provider.getBalance(attacker.address);
     const borrowAmountETH = ethers.utils.parseEther("2");
     await position
       .connect(attacker)
@@ -468,10 +472,13 @@ describe("Position", () => {
     expect(fr4USDCTokenBalance3).to.be.gt(fr4USDCTokenBalance2);
     const fr4ETHBalance3 = await fr4ETH.borrowBalanceCurrent(position.address);
     expect(fr4ETHBalance3).to.equal(borrowAmountETH);
+    const ethBalance3 = await ethers.provider.getBalance(attacker.address);
+    expect(ethBalance3).to.be.gt(ethBalance2);
 
     const fr4ETHTokenBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
     expect(fr4ETHTokenBalance3).to.equal(BigNumber.from(0));
     const fr4DAIBalance3 = await fr4DAI.borrowBalanceCurrent(position.address);
+    const DAIBalance3 = await DAI.balanceOf(attacker.address);
     const mintAmountETH = ethers.utils.parseEther("10");
     await position
       .connect(attacker)
@@ -482,5 +489,7 @@ describe("Position", () => {
     expect(fr4ETHTokenBalance4).to.be.gt(fr4ETHTokenBalance3);
     const fr4DAIBalance4 = await fr4DAI.borrowBalanceCurrent(position.address);
     expect(fr4DAIBalance4).to.be.gt(fr4DAIBalance3);
+    const DAIBalance4 = await DAI.balanceOf(attacker.address);
+    expect(DAIBalance4).to.equal(DAIBalance3.add(borrowAmountDAI));
   });
 });
