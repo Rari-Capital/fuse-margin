@@ -424,4 +424,27 @@ describe("Position", () => {
     const ethBalance5 = await ethers.provider.getBalance(attacker.address);
     expect(ethBalance5).to.be.gt(ethBalance4);
   });
+
+  it("should mint and borrow", async () => {
+    const fr4USDCTokenBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCTokenBalance0).to.equal(BigNumber.from(0));
+    const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
+    const fr4DAIBalance0 = await fr4DAI.borrowBalanceCurrent(position.address);
+    expect(fr4DAIBalance0).to.equal(BigNumber.from(0));
+    const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
+    await position.connect(attacker).mintAndBorrow(
+      FusePool4.address,
+      USDC.address,
+      fr4USDC.address,
+      DAI.address,
+      fr4DAI.address,
+      mintAmountUSDC,
+      borrowAmountDAI,
+    );
+    const fr4USDCTokenBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
+    const fr4DAIBalance1 = await fr4DAI.borrowBalanceCurrent(position.address);
+    expect(fr4DAIBalance1).to.equal(borrowAmountDAI);
+  });
 });
