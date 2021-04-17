@@ -186,4 +186,6 @@ describe("Position", () => {
     const ethBalance3 = await ethers.provider.getBalance(position.address);
     expect(ethBalance3).to.equal(wethDepositAmount);
   });
+
+  it("should transfer ETH and tokens", async () => {});
 });

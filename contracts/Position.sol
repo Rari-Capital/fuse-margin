@@ -55,19 +55,22 @@ contract Position is IPosition, Initializable {
         uint256 depositAmount
     ) external override onlyMargin {
         IERC20(base).safeApprove(cBase, depositAmount);
-        CErc20Interface(cBase).mint(depositAmount);
+        require(CErc20Interface(cBase).mint(depositAmount) == 0, "Position: mint in mint failed");
     }
 
     function mintETH(address cBase) external payable override onlyMargin {
-        CEtherInterface(cBase).mint{ value: msg.value }();
+        require(CEtherInterface(cBase).mint{ value: msg.value }() == 0, "Position: mint in mintETH failed");
     }
 
     function enterMarkets(address comptroller, address[] calldata cTokens) external override onlyMargin {
-        ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        for (uint256 i = 0; i < errors.length; i++) {
+            require(errors[i] == 0, "Position: enterMarkets in enterMarkets failed");
+        }
     }
 
     function exitMarket(address comptroller, address cToken) external override onlyMargin {
-        ComptrollerInterface(comptroller).exitMarket(cToken);
+        require(ComptrollerInterface(comptroller).exitMarket(cToken) == 0, "Position: exitMarket in exitMarket failed");
     }
 
     function borrow(
@@ -75,12 +78,12 @@ contract Position is IPosition, Initializable {
         address cQuote,
         uint256 borrowAmount
     ) external override onlyMargin {
-        CErc20Interface(cQuote).borrow(borrowAmount);
+        require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in borrow failed");
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);
     }
 
     function borrowETH(address cQuote, uint256 borrowAmount) external override onlyMargin {
-        CEtherInterface(cQuote).borrow(borrowAmount);
+        require(CEtherInterface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in borrowETH failed");
         payable(msg.sender).transfer(borrowAmount);
     }
 
@@ -90,11 +93,14 @@ contract Position is IPosition, Initializable {
         uint256 repayAmount
     ) external override onlyMargin {
         IERC20(quote).safeApprove(cQuote, repayAmount);
-        CErc20Interface(cQuote).repayBorrow(repayAmount);
+        require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayBorrow failed");
     }
 
     function repayBorrowETH(address cQuote) external payable override onlyMargin {
-        CEtherInterface(cQuote).repayBorrow{ value: msg.value }();
+        require(
+            CEtherInterface(cQuote).repayBorrow{ value: msg.value }() == 0,
+            "Position: repayBorrow in repayBorrowETH failed"
+        );
     }
 
     function redeem(
@@ -102,12 +108,12 @@ contract Position is IPosition, Initializable {
         address cBase,
         uint256 redeemTokens
     ) external override onlyMargin {
-        CErc20Interface(cBase).redeem(redeemTokens);
+        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeem failed");
         IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
     }
 
     function redeemETH(address cBase, uint256 redeemTokens) external override onlyMargin {
-        CErc20Interface(cBase).redeem(redeemTokens);
+        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeemETH failed");
         payable(msg.sender).transfer(address(this).balance);
     }
 
@@ -116,12 +122,18 @@ contract Position is IPosition, Initializable {
         address cBase,
         uint256 redeemAmount
     ) external override onlyMargin {
-        CErc20Interface(cBase).redeem(redeemAmount);
+        require(
+            CErc20Interface(cBase).redeemUnderlying(redeemAmount) == 0,
+            "Position: redeemUnderlying in redeemUnderlying failed"
+        );
         IERC20(base).safeTransfer(msg.sender, redeemAmount);
     }
 
     function redeemUnderlyingETH(address cBase, uint256 redeemAmount) external override onlyMargin {
-        CEtherInterface(cBase).redeemUnderlying(redeemAmount);
+        require(
+            CEtherInterface(cBase).redeemUnderlying(redeemAmount) == 0,
+            "Position: redeemUnderlying in redeemUnderlyingETH failed"
+        );
         payable(msg.sender).transfer(redeemAmount);
     }
 
@@ -153,13 +165,14 @@ contract Position is IPosition, Initializable {
         address cQuote,
         uint256 borrowAmount
     ) external payable override onlyMargin {
-        CEtherInterface(cBase).mint{ value: msg.value }();
+        require(CEtherInterface(cBase).mint{ value: msg.value }() == 0, "Position: mint in mintETHAndBorrow failed");
 
         address[] memory cTokens = new address[](1);
         cTokens[0] = cBase;
-        ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        require(errors[0] == 0, "Position: enterMarkets in mintETHAndBorrow failed");
 
-        CErc20Interface(cQuote).borrow(borrowAmount);
+        require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in mintETHAndBorrow failed");
         IERC20(quote).safeTransfer(msg.sender, borrowAmount);
     }
 
@@ -172,13 +185,14 @@ contract Position is IPosition, Initializable {
         uint256 borrowAmount
     ) external override onlyMargin {
         IERC20(base).safeApprove(cBase, depositAmount);
-        CErc20Interface(cBase).mint(depositAmount);
+        require(CErc20Interface(cBase).mint(depositAmount) == 0, "Position: mint in mintAndBorrowETH failed");
 
         address[] memory cTokens = new address[](1);
         cTokens[0] = cBase;
-        ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        require(errors[0] == 0, "Position: enterMarkets in mintAndBorrowETH failed");
 
-        CEtherInterface(cQuote).borrow(borrowAmount);
+        require(CEtherInterface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in mintAndBorrowETH failed");
         payable(msg.sender).transfer(borrowAmount);
     }
 }
