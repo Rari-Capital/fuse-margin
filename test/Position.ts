@@ -396,4 +396,32 @@ describe("Position", () => {
     const ethBalance5 = await ethers.provider.getBalance(attacker.address);
     expect(ethBalance5).to.be.gt(ethBalance4);
   });
+
+  it("should redeem underlying of ERC20s and ETH", async () => {
+    const fr4USDCTokenBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCTokenBalance0).to.equal(BigNumber.from(0));
+    const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
+    await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
+    const fr4USDCTokenBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
+    await position.connect(attacker).redeemUnderlying(USDC.address, fr4USDC.address, fr4USDCTokenBalance1);
+    const fr4USDCTokenBalance2 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCTokenBalance2).to.be.lt(fr4USDCTokenBalance1);
+    const USDCBalance2 = await USDC.balanceOf(attacker.address);
+    expect(USDCBalance2).to.be.gte(fr4USDCTokenBalance1);
+
+    const fr4ETHTokenBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
+    expect(fr4ETHTokenBalance3).to.equal(BigNumber.from(0));
+    const mintAmountETH = ethers.utils.parseEther("10");
+    await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
+    const fr4ETHTokenBalance4 = await fr4ETH.balanceOfUnderlying(position.address);
+    expect(fr4ETHTokenBalance4).to.gt(fr4ETHTokenBalance3);
+    const ethBalance4 = await ethers.provider.getBalance(attacker.address);
+    await position.connect(attacker).redeemUnderlyingETH(fr4ETH.address, fr4ETHTokenBalance4);
+    const fr4ETHTokenBalance5 = await fr4ETH.balanceOfUnderlying(position.address);
+    expect(fr4ETHTokenBalance5).to.be.lt(fr4ETHTokenBalance4);
+    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
+    expect(ethBalance5).to.be.gt(ethBalance4);
+  });
 });
