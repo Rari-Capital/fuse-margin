@@ -340,6 +340,18 @@ describe("Position", () => {
     await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
     const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
     await position.connect(attacker).borrow(DAI.address, fr4DAI.address, borrowAmountDAI);
+
+    const daiBalance2 = await DAI.balanceOf(position.address);
+    expect(daiBalance2).to.equal(BigNumber.from(0));
+    await DAI.connect(impersonateAddressSigner).transfer(position.address, borrowAmountDAI);
+    const daiBalance3 = await DAI.balanceOf(position.address);
+    expect(daiBalance3).to.equal(borrowAmountDAI);
+    const fr4DAIBalance3 = await fr4DAI.borrowBalanceCurrent(position.address);
+    expect(fr4DAIBalance3).to.be.gte(borrowAmountDAI);
+    await position.connect(attacker).repayBorrow(DAI.address, fr4DAI.address, borrowAmountDAI);
+    const fr4DAIBalance4 = await fr4DAI.borrowBalanceCurrent(position.address);
+    expect(fr4DAIBalance4).to.be.lt(borrowAmountDAI);
+
     const borrowAmountETH = ethers.utils.parseEther("2");
     await position.connect(attacker).borrowETH(fr4ETH.address, borrowAmountETH);
   });
