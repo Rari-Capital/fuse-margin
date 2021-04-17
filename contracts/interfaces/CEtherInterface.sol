@@ -17,4 +17,6 @@ interface CEtherInterface {
     function repayBorrow() external payable returns (uint256);
 
     function repayBorrowBehalf(address borrower) external payable returns (uint256);
+
+    function balanceOfUnderlying(address account) external view returns (uint);
 }

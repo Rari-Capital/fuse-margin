@@ -9,15 +9,17 @@ import {
   FuseMarginV1__factory,
   Position__factory,
   IERC20,
+  ERC20,
+  CErc20Interface,
   IWETH9,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
 import {
-  soloMarginAddress,
-  uniswapFactoryAddress,
+  usdcAddress,
   impersonateAddress,
   wethAddress,
   daiAddress,
+  fr4USDCAddress,
 } from "../scripts/constants/addresses";
 
 describe("Position", () => {
@@ -222,5 +224,22 @@ describe("Position", () => {
     expect(daiBalance5).to.equal(BigNumber.from(0));
     const ownerBalance5 = await DAI.balanceOf(owner.address);
     expect(ownerBalance5).to.equal(ethDepositAmount);
+  });
+
+  it("should mint ERC20s and ETH", async () => {
+    const USDC: ERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+      usdcAddress,
+    )) as ERC20;
+    const fr4USDC: CErc20Interface = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4USDCAddress,
+    )) as CErc20Interface;
+    const fr4USDCBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
+    const mintAmountUSDC = ethers.utils.parseUnits("10000", await USDC.decimals());
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
+    await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
+    const fr4USDCBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCBalance1).to.be.gt(fr4USDCBalance0);
   });
 });
