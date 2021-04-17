@@ -354,5 +354,10 @@ describe("Position", () => {
 
     const borrowAmountETH = ethers.utils.parseEther("2");
     await position.connect(attacker).borrowETH(fr4ETH.address, borrowAmountETH);
+    const fr4ETHBalance5 = await fr4ETH.borrowBalanceCurrent(position.address);
+    expect(fr4ETHBalance5).to.be.gte(borrowAmountETH);
+    await position.connect(attacker).repayBorrowETH(fr4ETH.address, { value: borrowAmountETH });
+    const fr4ETHBalance6 = await fr4ETH.borrowBalanceCurrent(position.address);
+    expect(fr4ETHBalance6).to.be.lt(borrowAmountETH);
   });
 });
