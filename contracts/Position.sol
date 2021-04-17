@@ -1,41 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.6;
 
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 import { CErc20Interface } from "./interfaces/CErc20Interface.sol";
 import { CEtherInterface } from "./interfaces/CEtherInterface.sol";
 import { ComptrollerInterface } from "./interfaces/ComptrollerInterface.sol";
-import { IPosition } from "./interfaces/IPosition.sol";
+import { PositionBase } from "./Position/PositionBase.sol";
 
-contract Position is IPosition, Initializable {
+contract Position is PositionBase {
     using SafeERC20 for IERC20;
-
-    IFuseMarginController public override fuseMarginController;
-
-    function initialize(IFuseMarginController _fuseMarginController) external override initializer {
-        fuseMarginController = _fuseMarginController;
-    }
-
-    modifier onlyMargin() {
-        require(fuseMarginController.approvedContracts(msg.sender), "Position: Not approved contract");
-        _;
-    }
-
-    receive() external payable {}
-
-    function proxyCall(address target, bytes calldata callData)
-        external
-        payable
-        override
-        onlyMargin
-        returns (bool, bytes memory)
-    {
-        (bool success, bytes memory result) = target.call{ value: msg.value }(callData);
-        return (success, result);
-    }
 
     function approveToken(
         address token,
@@ -51,10 +25,6 @@ contract Position is IPosition, Initializable {
         uint256 amount
     ) external override onlyMargin {
         IERC20(token).safeTransfer(to, amount);
-    }
-
-    function transferETH(address payable to, uint256 amount) external override onlyMargin {
-        to.transfer(amount);
     }
 
     function mint(
