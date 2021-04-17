@@ -14,8 +14,6 @@ import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
 import { DYDX } from "./FuseMarginV1/DYDX.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
 
-import "hardhat/console.sol";
-
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
 contract FuseMarginV1 is Uniswap, DYDX {
