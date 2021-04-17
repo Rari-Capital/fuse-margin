@@ -29,6 +29,10 @@ describe("Position", () => {
   let position: Position;
   let fuseMarginController: FuseMarginController;
   let impersonateAddressSigner: Signer;
+  let WETH9: IWETH9;
+  let DAI: IERC20;
+  let USDC: ERC20;
+  let fr4USDC: CErc20Interface;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -51,6 +55,20 @@ describe("Position", () => {
     position = await positionFactory.deploy();
     await position.initialize(fuseMarginController.address);
     await fuseMarginController.addMarginContract(attacker.address);
+
+    WETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
+    DAI = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      daiAddress,
+    )) as IERC20;
+    USDC = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+      usdcAddress,
+    )) as ERC20;
+    fr4USDC = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4USDCAddress,
+    )) as CErc20Interface;
 
     impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
     await network.provider.request({
@@ -171,7 +189,6 @@ describe("Position", () => {
   });
 
   it("should perform proxy call", async () => {
-    const WETH9: IWETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
     const wethBalance0 = await WETH9.balanceOf(position.address);
     expect(wethBalance0).to.equal(BigNumber.from(0));
     const wethDepositCall: string = WETH9.interface.encodeFunctionData("deposit");
@@ -191,10 +208,6 @@ describe("Position", () => {
   });
 
   it("should approve tokens", async () => {
-    const DAI: IERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-      daiAddress,
-    )) as IERC20;
     const daiApproval0 = await DAI.allowance(position.address, owner.address);
     expect(daiApproval0).to.equal(BigNumber.from(0));
     const ethDepositAmount = ethers.utils.parseEther("1");
@@ -212,10 +225,6 @@ describe("Position", () => {
     const ethBalance2 = await ethers.provider.getBalance(position.address);
     expect(ethBalance2).to.equal(BigNumber.from(0));
 
-    const DAI: IERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-      daiAddress,
-    )) as IERC20;
     await DAI.connect(impersonateAddressSigner).transfer(position.address, ethDepositAmount);
     const daiBalance4 = await DAI.balanceOf(position.address);
     expect(daiBalance4).to.equal(ethDepositAmount);
@@ -227,14 +236,6 @@ describe("Position", () => {
   });
 
   it("should mint ERC20s and ETH", async () => {
-    const USDC: ERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
-      usdcAddress,
-    )) as ERC20;
-    const fr4USDC: CErc20Interface = (await ethers.getContractAt(
-      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
-      fr4USDCAddress,
-    )) as CErc20Interface;
     const fr4USDCBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
     const mintAmountUSDC = ethers.utils.parseUnits("10000", await USDC.decimals());
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
