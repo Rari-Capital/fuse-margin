@@ -360,4 +360,40 @@ describe("Position", () => {
     const fr4ETHBalance6 = await fr4ETH.borrowBalanceCurrent(position.address);
     expect(fr4ETHBalance6).to.be.lt(borrowAmountETH);
   });
+
+  it("should redeem ERC20s and ETH", async () => {
+    const fr4USDCToken: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      fr4USDC.address,
+    )) as IERC20;
+    const fr4USDCTokenBalance0 = await fr4USDCToken.balanceOf(position.address);
+    expect(fr4USDCTokenBalance0).to.equal(BigNumber.from(0));
+    const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
+    await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
+    const fr4USDCTokenBalance1 = await fr4USDCToken.balanceOf(position.address);
+    expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
+    await position.connect(attacker).redeem(USDC.address, fr4USDC.address, fr4USDCTokenBalance1);
+    const fr4USDCTokenBalance2 = await fr4USDCToken.balanceOf(position.address);
+    expect(fr4USDCTokenBalance2).to.equal(BigNumber.from(0));
+    const USDCBalance2 = await USDC.balanceOf(attacker.address);
+    expect(USDCBalance2).to.be.gte(mintAmountUSDC);
+
+    const fr4ETHToken: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      fr4ETH.address,
+    )) as IERC20;
+    const fr4ETHTokenBalance3 = await fr4ETHToken.balanceOf(position.address);
+    expect(fr4ETHTokenBalance3).to.equal(BigNumber.from(0));
+    const mintAmountETH = ethers.utils.parseEther("10");
+    await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
+    const fr4ETHTokenBalance4 = await fr4ETHToken.balanceOf(position.address);
+    expect(fr4ETHTokenBalance4).to.gt(fr4ETHTokenBalance3);
+    const ethBalance4 = await ethers.provider.getBalance(attacker.address);
+    await position.connect(attacker).redeemETH(fr4ETH.address, fr4ETHTokenBalance4);
+    const fr4USDCTokenBalance5 = await fr4USDCToken.balanceOf(position.address);
+    expect(fr4USDCTokenBalance5).to.equal(BigNumber.from(0));
+    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
+    expect(ethBalance5).to.be.gt(ethBalance4);
+  });
 });
