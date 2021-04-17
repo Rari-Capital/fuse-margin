@@ -229,6 +229,8 @@ describe("Position", () => {
   });
 
   it("should transfer ETH and tokens", async () => {
+    const ethBalance0 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance0).to.equal(BigNumber.from(0));
     const ethDepositAmount = ethers.utils.parseEther("1");
     await owner.sendTransaction({ to: position.address, value: ethDepositAmount });
     const ethBalance1 = await ethers.provider.getBalance(position.address);
@@ -237,6 +239,8 @@ describe("Position", () => {
     const ethBalance2 = await ethers.provider.getBalance(position.address);
     expect(ethBalance2).to.equal(BigNumber.from(0));
 
+    const daiBalance3 = await DAI.balanceOf(position.address);
+    expect(daiBalance3).to.equal(BigNumber.from(0));
     await DAI.connect(impersonateAddressSigner).transfer(position.address, ethDepositAmount);
     const daiBalance4 = await DAI.balanceOf(position.address);
     expect(daiBalance4).to.equal(ethDepositAmount);
@@ -248,18 +252,36 @@ describe("Position", () => {
   });
 
   it("should mint ERC20s and ETH", async () => {
+    const fr4USDCToken: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      fr4USDC.address,
+    )) as IERC20;
     const fr4USDCBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
+    expect(fr4USDCBalance0).to.equal(BigNumber.from(0));
+    const fr4USDCTokenBalance0 = await fr4USDCToken.balanceOf(position.address);
+    expect(fr4USDCTokenBalance0).to.equal(BigNumber.from(0));
     const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
     const fr4USDCBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
     expect(fr4USDCBalance1).to.be.gt(fr4USDCBalance0);
+    const fr4USDCTokenBalance1 = await fr4USDCToken.balanceOf(position.address);
+    expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
 
+    const fr4ETHToken: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      fr4ETH.address,
+    )) as IERC20;
     const fr4ETHBalance2 = await fr4ETH.balanceOfUnderlying(position.address);
+    expect(fr4ETHBalance2).to.equal(BigNumber.from(0));
+    const fr4ETHTokenBalance2 = await fr4ETHToken.balanceOf(position.address);
+    expect(fr4ETHTokenBalance2).to.equal(BigNumber.from(0));
     const mintAmountETH = ethers.utils.parseEther("10");
     await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
     const fr4ETHBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
     expect(fr4ETHBalance3).to.gt(fr4ETHBalance2);
+    const fr4ETHTokenBalance3 = await fr4ETHToken.balanceOf(position.address);
+    expect(fr4ETHTokenBalance3).to.gt(fr4ETHTokenBalance2);
   });
 
   it("should enter markets", async () => {
@@ -276,7 +298,7 @@ describe("Position", () => {
     // But exiting a new market works for some reason
     await position.connect(attacker).exitMarket(FusePool4.address, fr4DAI.address);
     const comptrollerMarkets3 = await FusePool4.getAssetsIn(position.address);
-    expect(comptrollerMarkets1).to.deep.equal([fr4USDC.address]);
+    expect(comptrollerMarkets3).to.deep.equal([fr4USDC.address]);
   });
 
   it("should borrow ERC20s and ETH", async () => {
