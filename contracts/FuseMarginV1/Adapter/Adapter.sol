@@ -6,7 +6,6 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
-import { IUniswapV2Factory } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import { ISoloMargin } from "../../interfaces/ISoloMargin.sol";
 import { ICallee } from "../../interfaces/ICallee.sol";
 import { IPosition } from "../../interfaces/IPosition.sol";
@@ -17,7 +16,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IUniswapV2Factory public immutable uniswapFactory;
+    address public immutable uniswapFactory;
     ISoloMargin public immutable soloMargin;
 
     mapping(address => uint256) internal tokenAddressToMarketId;
@@ -25,7 +24,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
     /// @param _uniswapFactory Uniswap V2 factory address
     /// @param _soloMargin DYDX solo margin address
     constructor(address _uniswapFactory, address _soloMargin) {
-        uniswapFactory = IUniswapV2Factory(_uniswapFactory);
+        uniswapFactory = _uniswapFactory;
         soloMargin = ISoloMargin(_soloMargin);
         // Setup state variables
         uint256 numMarkets = ISoloMargin(_soloMargin).getNumMarkets();
