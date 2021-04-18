@@ -242,4 +242,63 @@ contract Position is PositionBase {
         require(CEtherInterface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in mintAndBorrowETH failed");
         payable(msg.sender).transfer(borrowAmount);
     }
+
+    /// @dev Repay quote and redeem base, must have transferred the repay token to this contract before calling
+    /// @param base Token to redeem
+    /// @param cBase Equivalent cToken
+    /// @param quote Token to repay
+    /// @param cQuote Equivalent cToken
+    /// @param repayAmount Amount to repay
+    /// @param redeemTokens Amount of cTokens to redeem
+    function repayAndRedeem(
+        address base,
+        address cBase,
+        address quote,
+        address cQuote,
+        uint256 repayAmount,
+        uint256 redeemTokens
+    ) external override onlyMargin {
+        IERC20(quote).safeApprove(cQuote, repayAmount);
+        require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayBorrow failed");
+
+        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeem failed");
+        IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
+    }
+
+    /// @dev Repay quote and redeem base, must call this function with ETH value
+    /// @param base Token to redeem
+    /// @param cBase Equivalent cToken
+    /// @param cQuote cEther address
+    /// @param redeemTokens Amount of cTokens to redeem
+    function repayETHAndRedeem(
+        address base,
+        address cBase,
+        address cQuote,
+        uint256 redeemTokens
+    ) external payable override onlyMargin {
+        CEtherInterface(cQuote).repayBorrow{ value: msg.value }();
+
+        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeem failed");
+        IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
+    }
+
+    /// @dev Repay quote and redeem base, must have transferred the repay token to this contract before calling
+    /// @param cBase cEther address
+    /// @param quote Token to repay
+    /// @param cQuote Equivalent cToken
+    /// @param repayAmount Amount to repay
+    /// @param redeemTokens Amount of cEther to redeem
+    function repayAndRedeemETH(
+        address cBase,
+        address quote,
+        address cQuote,
+        uint256 repayAmount,
+        uint256 redeemTokens
+    ) external override onlyMargin {
+        IERC20(quote).safeApprove(cQuote, repayAmount);
+        require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayBorrow failed");
+
+        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeemETH failed");
+        payable(msg.sender).transfer(address(this).balance);
+    }
 }
