@@ -12,7 +12,7 @@
     limitations under the License.
 */
 
-pragma solidity ^0.7.5;
+pragma solidity >=0.5.7;
 
 library DYDXDataTypes {
     enum ActionType {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.7.6;
+pragma solidity >=0.4.18;
 
 interface IWETH9 {
     function deposit() external payable;

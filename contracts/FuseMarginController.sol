@@ -8,6 +8,7 @@ import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 /// @author Ganesh Gautham Elango
 /// @title Core contract for controlling the Fuse margin trading protocol
 contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
+    
     /// @dev Gets a position address given an index (index = tokenId)
     address[] public override positions;
     /// @dev List of supported FuseMargin contracts
