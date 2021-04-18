@@ -496,7 +496,6 @@ describe("Position", () => {
   it("should repay and redeem", async () => {
     const mintAmountDAI = ethers.utils.parseUnits("100000", await DAI.decimals());
     await DAI.connect(impersonateAddressSigner).transfer(position.address, mintAmountDAI);
-    const frUSDCBalance0 = await fr4USDC.borrowBalanceCurrent(position.address);
     const borrowAmountUSDC = ethers.utils.parseUnits("10000", await USDC.decimals());
     await position
       .connect(attacker)
@@ -509,6 +508,7 @@ describe("Position", () => {
         mintAmountDAI,
         borrowAmountUSDC,
       );
+
     const frDAIToken: IERC20 = (await ethers.getContractAt(
       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
       fr4DAI.address,
@@ -517,7 +517,6 @@ describe("Position", () => {
     const redeemAmount1 = frDAIBalance1.div(2);
     const daiBalance1 = await DAI.balanceOf(attacker.address);
     const frUSDCBalance1 = await fr4USDC.borrowBalanceCurrent(position.address);
-    expect(frUSDCBalance1).to.be.gt(frUSDCBalance0);
     await USDC.connect(impersonateAddressSigner).transfer(position.address, frUSDCBalance1);
     await position
       .connect(attacker)
@@ -528,5 +527,24 @@ describe("Position", () => {
     expect(daiBalance2).to.gt(daiBalance1);
     const frUSDCBalance2 = await fr4USDC.borrowBalanceCurrent(position.address);
     expect(frUSDCBalance2).to.be.lt(frUSDCBalance1);
+
+    await DAI.connect(impersonateAddressSigner).transfer(position.address, mintAmountDAI);
+    const borrowAmountETH = ethers.utils.parseEther("2");
+    await position
+      .connect(attacker)
+      .mintAndBorrowETH(FusePool4.address, DAI.address, fr4DAI.address, fr4ETH.address, mintAmountDAI, borrowAmountETH);
+    const frDAIBalance3 = await frDAIToken.balanceOf(position.address);
+    const redeemAmount3 = frDAIBalance3.div(2);
+    const daiBalance3 = await DAI.balanceOf(attacker.address);
+    const frETHBalance3 = await fr4ETH.borrowBalanceCurrent(position.address);
+    await position
+      .connect(attacker)
+      .repayETHAndRedeem(DAI.address, fr4DAI.address, fr4ETH.address, redeemAmount3, { value: frETHBalance3 });
+    const frDAIBalance4 = await frDAIToken.balanceOf(position.address);
+    expect(frDAIBalance4).to.be.lt(frDAIBalance3);
+    const daiBalance4 = await DAI.balanceOf(attacker.address);
+    expect(daiBalance4).to.gt(daiBalance3);
+    const frETHBalance4 = await fr4USDC.borrowBalanceCurrent(position.address);
+    expect(frETHBalance4).to.be.lt(frETHBalance3);
   });
 });
