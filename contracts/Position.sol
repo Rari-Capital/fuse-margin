@@ -249,17 +249,20 @@ contract Position is PositionBase {
     /// @param quote Token to repay
     /// @param cQuote Equivalent cToken
     /// @param redeemTokens Amount of cTokens to redeem
-    /// @param repayAmount Amount to repay    
+    /// @param repayAmount Amount to repay
     function repayAndRedeem(
         address base,
         address cBase,
         address quote,
         address cQuote,
         uint256 redeemTokens,
-        uint256 repayAmount        
+        uint256 repayAmount
     ) external override onlyMargin {
         IERC20(quote).safeApprove(cQuote, repayAmount);
-        require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayAndRedeem failed");
+        require(
+            CErc20Interface(cQuote).repayBorrow(repayAmount) == 0,
+            "Position: repayBorrow in repayAndRedeem failed"
+        );
 
         require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in repayAndRedeem failed");
         IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
@@ -287,16 +290,19 @@ contract Position is PositionBase {
     /// @param quote Token to repay
     /// @param cQuote Equivalent cToken
     /// @param redeemTokens Amount of cEther to redeem
-    /// @param repayAmount Amount to repay    
+    /// @param repayAmount Amount to repay
     function repayAndRedeemETH(
         address cBase,
         address quote,
         address cQuote,
         uint256 redeemTokens,
-        uint256 repayAmount        
+        uint256 repayAmount
     ) external override onlyMargin {
         IERC20(quote).safeApprove(cQuote, repayAmount);
-        require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayAndRedeemETH failed");
+        require(
+            CErc20Interface(cQuote).repayBorrow(repayAmount) == 0,
+            "Position: repayBorrow in repayAndRedeemETH failed"
+        );
 
         require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in repayAndRedeemETH failed");
         payable(msg.sender).transfer(address(this).balance);

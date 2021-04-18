@@ -519,14 +519,9 @@ describe("Position", () => {
     const frUSDCBalance1 = await fr4USDC.borrowBalanceCurrent(position.address);
     expect(frUSDCBalance1).to.be.gt(frUSDCBalance0);
     await USDC.connect(impersonateAddressSigner).transfer(position.address, frUSDCBalance1);
-    await position.connect(attacker).repayAndRedeem(
-      DAI.address,
-      fr4DAI.address,
-      USDC.address,
-      fr4USDC.address,
-      redeemAmount1,
-      frUSDCBalance1
-    );
+    await position
+      .connect(attacker)
+      .repayAndRedeem(DAI.address, fr4DAI.address, USDC.address, fr4USDC.address, redeemAmount1, frUSDCBalance1);
     const frDAIBalance2 = await frDAIToken.balanceOf(position.address);
     expect(frDAIBalance2).to.be.lt(frDAIBalance1);
     const daiBalance2 = await DAI.balanceOf(attacker.address);
