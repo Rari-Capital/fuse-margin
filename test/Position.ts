@@ -493,7 +493,5 @@ describe("Position", () => {
     expect(DAIBalance4).to.equal(DAIBalance3.add(borrowAmountDAI));
   });
 
-  it("should repay and redeem", async () => {
-    
-  });
+  it("should repay and redeem", async () => {});
 });

@@ -18,11 +18,8 @@ interface IPosition {
     /// @param callData ABI encoded function/params
     /// @return Whether call was successful
     /// @return Return bytes
-    function proxyCall(address target, bytes calldata callData)
-        external
-        payable
-        returns (bool, bytes memory);
-    
+    function proxyCall(address target, bytes calldata callData) external payable returns (bool, bytes memory);
+
     /// @dev Transfer ETH balance
     /// @param to Address to send to
     /// @param amount Amount of ETH to send
