@@ -508,7 +508,6 @@ describe("Position", () => {
         mintAmountDAI,
         borrowAmountUSDC,
       );
-
     const frDAIToken: IERC20 = (await ethers.getContractAt(
       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
       fr4DAI.address,
@@ -546,5 +545,39 @@ describe("Position", () => {
     expect(daiBalance4).to.gt(daiBalance3);
     const frETHBalance4 = await fr4USDC.borrowBalanceCurrent(position.address);
     expect(frETHBalance4).to.be.lt(frETHBalance3);
+
+    const frETHToken: IERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+      fr4ETH.address,
+    )) as IERC20;
+    const mintAmountETH = ethers.utils.parseEther("10");
+    await position
+      .connect(attacker)
+      .mintETHAndBorrow(
+        FusePool4.address,
+        fr4ETH.address,
+        USDC.address,
+        fr4USDC.address,
+        borrowAmountUSDC,
+        { value: mintAmountETH }
+      );
+    const frETHBalance5 = await frETHToken.balanceOf(position.address);
+    const redeemAmount5 = frETHBalance5.div(2);
+    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
+    const frUSDCBalance5 = await fr4USDC.borrowBalanceCurrent(position.address);
+    await USDC.connect(impersonateAddressSigner).transfer(position.address, frUSDCBalance5);
+    await position.connect(attacker).repayAndRedeemETH(
+      fr4ETH.address,
+      USDC.address,
+      fr4USDC.address,
+      redeemAmount5,
+      frUSDCBalance5
+    )
+    const frETHBalance6 = await frETHToken.balanceOf(position.address);
+    expect(frETHBalance6).to.be.lt(frETHBalance5);
+    const ethBalance6 = await ethers.provider.getBalance(attacker.address);
+    expect(ethBalance6).to.be.gt(ethBalance5);
+    const frUSDCBalance6 = await fr4USDC.borrowBalanceCurrent(position.address);
+    expect(frUSDCBalance6).to.be.lt(frUSDCBalance5);
   });
 });
