@@ -492,4 +492,8 @@ describe("Position", () => {
     const DAIBalance4 = await DAI.balanceOf(attacker.address);
     expect(DAIBalance4).to.equal(DAIBalance3.add(borrowAmountDAI));
   });
+
+  it("should repay and redeem", async () => {
+    
+  });
 });

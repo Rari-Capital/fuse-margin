@@ -5,20 +5,32 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/Initial
 import { IFuseMarginController } from "../interfaces/IFuseMarginController.sol";
 import { IPosition } from "../interfaces/IPosition.sol";
 
+/// @author Ganesh Gautham Elango
+/// @title Base contract for positions
 abstract contract PositionBase is IPosition, Initializable {
+    /// @dev Points to immutable FuseMarginController instance
     IFuseMarginController public override fuseMarginController;
 
+    /// @dev Initializes the contract once after creation
+    /// @param _fuseMarginController Address of FuseMarginController
     function initialize(IFuseMarginController _fuseMarginController) external override initializer {
         fuseMarginController = _fuseMarginController;
     }
 
+    /// @dev Fallback for reciving Ether
     receive() external payable {}
 
+    /// @dev Checks if caller is an approved margin contract
     modifier onlyMargin() {
         require(fuseMarginController.approvedContracts(msg.sender), "Position: Not approved contract");
         _;
     }
 
+    /// @dev Allows for generalized calls through this position
+    /// @param target Contract address to call
+    /// @param callData ABI encoded function/params
+    /// @return Whether call was successful
+    /// @return Return bytes
     function proxyCall(address target, bytes calldata callData)
         external
         payable
@@ -30,6 +42,9 @@ abstract contract PositionBase is IPosition, Initializable {
         return (success, result);
     }
 
+    /// @dev Transfer ETH balance
+    /// @param to Address to send to
+    /// @param amount Amount of ETH to send
     function transferETH(address payable to, uint256 amount) external override onlyMargin {
         to.transfer(amount);
     }
