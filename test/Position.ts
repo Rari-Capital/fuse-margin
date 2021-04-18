@@ -580,26 +580,17 @@ describe("Position", () => {
     const mintAmountETH = ethers.utils.parseEther("10");
     await position
       .connect(attacker)
-      .mintETHAndBorrow(
-        FusePool4.address,
-        fr4ETH.address,
-        USDC.address,
-        fr4USDC.address,
-        borrowAmountUSDC,
-        { value: mintAmountETH }
-      );
+      .mintETHAndBorrow(FusePool4.address, fr4ETH.address, USDC.address, fr4USDC.address, borrowAmountUSDC, {
+        value: mintAmountETH,
+      });
     const frETHBalance5 = await frETHToken.balanceOf(position.address);
     const redeemAmount5 = frETHBalance5.div(2);
     const ethBalance5 = await ethers.provider.getBalance(attacker.address);
     const frUSDCBalance5 = await fr4USDC.borrowBalanceCurrent(position.address);
     await USDC.connect(impersonateAddressSigner).transfer(position.address, frUSDCBalance5);
-    await position.connect(attacker).repayAndRedeemETH(
-      fr4ETH.address,
-      USDC.address,
-      fr4USDC.address,
-      redeemAmount5,
-      frUSDCBalance5
-    )
+    await position
+      .connect(attacker)
+      .repayAndRedeemETH(fr4ETH.address, USDC.address, fr4USDC.address, redeemAmount5, frUSDCBalance5);
     const frETHBalance6 = await frETHToken.balanceOf(position.address);
     expect(frETHBalance6).to.be.lt(frETHBalance5);
     const ethBalance6 = await ethers.provider.getBalance(attacker.address);
