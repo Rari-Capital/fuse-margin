@@ -198,6 +198,33 @@ describe("Position", () => {
         BigNumber.from(0),
       ),
     ).to.be.revertedWith("Position: Not approved contract");
+    await expect(
+      position.repayAndRedeem(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+        BigNumber.from(0),
+      ),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(
+      position.repayETHAndRedeem(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+      ),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(
+      position.repayAndRedeemETH(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+        BigNumber.from(0),
+      ),
+    ).to.be.revertedWith("Position: Not approved contract");
   });
 
   it("should perform proxy call", async () => {
