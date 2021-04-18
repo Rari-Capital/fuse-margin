@@ -10,6 +10,7 @@ import {
   FuseMarginController__factory,
   FuseMarginV1__factory,
   Position__factory,
+  IUniswapV2Pair,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
 import {
@@ -125,6 +126,20 @@ describe("FuseMarginV1", () => {
     )) as ERC20;
     await WBTC.connect(impersonateSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
 
+
+    const uniswapPair = (await ethers.getContractAt(
+      "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol:IUniswapV2Pair",
+      daiUNIV2Address,
+    )) as IUniswapV2Pair;
+    let amount0Out = daiBorrowAmount;
+    let amount1Out = BigNumber.from(0);
+    let pairToken = await uniswapPair.token1();
+    if (daiAddress === pairToken) {
+      amount0Out = BigNumber.from(0);
+      amount1Out = daiBorrowAmount;
+      pairToken = await uniswapPair.token0();
+    }
+
     await fuseMarginV1
       .connect(impersonateSigner)
       .openPositionBaseUniswap(
@@ -133,7 +148,8 @@ describe("FuseMarginV1", () => {
         daiAddress,
         wethAddress,
         wbtcProvidedAmount,
-        daiBorrowAmount,
+        amount0Out,
+        amount1Out,
         fusePool,
         exchangeData,
       );

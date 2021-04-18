@@ -47,7 +47,7 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         return IERC20(base).balanceOf(address(this));
     }
 
-    function _mintAndRedeem(
+    function _mintAndBorrow(
         address position,
         address base,
         address quote,
@@ -58,5 +58,19 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         (address comptroller, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
         IERC20(base).safeTransfer(position, depositAmount);
         IPosition(position).mintAndBorrow(comptroller, base, cBase, quote, cQuote, depositAmount, borrowAmount);
+    }
+
+    function _repayAndRedeem(
+        address position,
+        address base,
+        address quote,
+        uint256 redeemTokens,
+        uint256 repayAmount,
+        bytes memory fusePool
+    ) internal {
+        (, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
+        // uint256 repayAmount = CErc20Interface(cQuote).borrowBalanceCurrent(position);
+        IERC20(quote).safeTransfer(position, repayAmount);
+        IPosition(position).repayAndRedeem(base, cBase, quote, cQuote, redeemTokens, repayAmount);
     }
 }

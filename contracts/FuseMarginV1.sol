@@ -41,13 +41,13 @@ contract FuseMarginV1 is Uniswap, DYDX {
         address quote,
         address pairToken,
         uint256 providedAmount,
-        uint256 borrowAmount,
+        uint256 amount0Out,
+        uint256 amount1Out,
         bytes calldata fusePool,
         bytes calldata exchangeData
     ) external returns (uint256) {
         IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
         address newPosition = _newPosition();
-        (uint256 amount0Out, uint256 amount1Out) = _getUniswapAmounts(pair, quote, borrowAmount);
         bytes memory data = abi.encode(newPosition, base, quote, pairToken, fusePool, exchangeData);
         pair.swap(amount0Out, amount1Out, address(this), data);
         return fuseMarginController.newPosition(msg.sender, newPosition);
@@ -57,21 +57,5 @@ contract FuseMarginV1 is Uniswap, DYDX {
         address newPosition = Clones.clone(positionImplementation);
         IPosition(newPosition).initialize(fuseMarginController);
         return newPosition;
-    }
-
-    function _getUniswapAmounts(
-        IUniswapV2Pair pair,
-        address quote,
-        uint256 borrowAmount
-    ) internal view returns (uint256, uint256) {
-        uint256 amount0Out = borrowAmount;
-        uint256 amount1Out;
-        address pairToken = pair.token1();
-        if (quote == pairToken) {
-            amount0Out = 0;
-            amount1Out = borrowAmount;
-            pairToken = pair.token0();
-        }
-        return (amount0Out, amount1Out);
     }
 }
