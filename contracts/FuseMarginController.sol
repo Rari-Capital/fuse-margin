@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.3;
 
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { ERC721 } from "openzeppelin-contracts-4/token/ERC721/ERC721.sol";
+import { Ownable } from "openzeppelin-contracts-4/access/Ownable.sol";
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Core contract for controlling the Fuse margin trading protocol
 contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
-    using SafeMath for uint256;
-
     /// @dev Gets a position address given an index (index = tokenId)
     address[] public override positions;
     /// @dev List of supported FuseMargin contracts
@@ -54,7 +51,7 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         require(!approvedContracts[contractAddress], "FuseMarginController: Already exists");
         marginContracts.push(contractAddress);
         approvedContracts[contractAddress] = true;
-        marginContractsNum = marginContractsNum.add(1);
+        marginContractsNum++;
         emit AddMarginContract(contractAddress, msg.sender);
     }
 
@@ -63,7 +60,7 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     function removeMarginContract(address contractAddress) external override onlyOwner {
         require(approvedContracts[contractAddress], "FuseMarginController: Does not exist");
         approvedContracts[contractAddress] = false;
-        marginContractsNum = marginContractsNum.sub(1);
+        marginContractsNum--;
         emit RemoveMarginContract(contractAddress, msg.sender);
     }
 
@@ -81,17 +78,19 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         return approvedMarginContracts;
     }
 
-    /// @dev Gets all tokenIds and positions a user holds
+    /// @dev Gets all tokenIds and positions a user holds, dont call this on chain since it is expensive
     /// @param user Address of user
     /// @return List of tokenIds the user holds
     /// @return List of positions the user holds
     function tokensOfOwner(address user) external view override returns (uint256[] memory, address[] memory) {
         uint256[] memory tokens = new uint256[](balanceOf(user));
         address[] memory addresses = new address[](balanceOf(user));
-        for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 tokenId = tokenOfOwnerByIndex(user, i);
-            tokens[i] = tokenId;
-            addresses[i] = positions[i];
+        uint256 i;
+        for (uint256 j = 0; j < positions.length; j++) {
+            if ((_exists(j)) && (user == ownerOf(j))) {
+                tokens[i] = j;
+                addresses[i] = positions[j];
+            }
         }
         return (tokens, addresses);
     }

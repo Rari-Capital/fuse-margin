@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.7.6;
+pragma solidity >=0.7.6;
 
 interface IFuseMarginController {
     /// @dev Emitted when support of FuseMargin contract is added
@@ -34,7 +34,7 @@ interface IFuseMarginController {
     /// @return List of the addresses of the approved margin contracts
     function getMarginContracts() external view returns (address[] memory);
 
-    /// @dev Gets all tokenIds and positions a user holds
+    /// @dev Gets all tokenIds and positions a user holds, dont call this on chain since it is expensive
     /// @param user Address of user
     /// @return List of tokenIds the user holds
     /// @return List of positions the user holds
