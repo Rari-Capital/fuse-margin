@@ -20,7 +20,7 @@ abstract contract PositionBase is IPosition, Initializable {
     /// @dev Fallback for reciving Ether
     receive() external payable {}
 
-    /// @dev Checks if caller is an approved margin contract
+    /// @dev Ensures functions are called from approved FuseMargin contracts
     modifier onlyMargin() {
         require(fuseMarginController.approvedContracts(msg.sender), "Position: Not approved contract");
         _;

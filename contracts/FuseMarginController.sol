@@ -11,14 +11,14 @@ import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     using SafeMath for uint256;
 
-    // Gets a position address given an index (index = tokenId)
+    /// @dev Gets a position address given an index (index = tokenId)
     address[] public override positions;
-    // List of supported FuseMargin contracts
+    /// @dev List of supported FuseMargin contracts
     address[] public override marginContracts;
-    // Check if FuseMargin contract address is approved
+    /// @dev Check if FuseMargin contract address is approved
     mapping(address => bool) public override approvedContracts;
 
-    // Number of FuseMargin contracts
+    /// @dev Number of FuseMargin contracts
     uint256 private marginContractsNum = 0;
 
     /// @param name_ ERC721 name
