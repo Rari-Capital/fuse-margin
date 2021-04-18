@@ -184,7 +184,9 @@ describe("FuseMarginController", () => {
     const [getTokenIdsOfOwner0, getPositionsOfOwner0] = await fuseMarginController.tokensOfOwner(owner.address);
     expect(getTokenIdsOfOwner0).to.deep.equal([]);
     expect(getPositionsOfOwner0).to.deep.equal([]);
-    await fuseMarginController.connect(attacker).newPosition(owner.address, position.address);
+    await expect(fuseMarginController.connect(attacker).newPosition(owner.address, position.address))
+      .to.emit(fuseMarginController, "Transfer")
+      .withArgs(ethers.constants.AddressZero, owner.address, BigNumber.from(0));
     const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
     expect(getPositions1).to.equal(position.address);
     const getBalanceOf1 = await fuseMarginController.balanceOf(owner.address);
