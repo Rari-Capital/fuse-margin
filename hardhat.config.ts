@@ -12,6 +12,8 @@ import "./tasks/clean";
 dotenv.config();
 const ALCHEMY_MAINNET: string = "https://eth-mainnet.alchemyapi.io/v2/" + process.env.ALCHEMY_API_KEY;
 const COINMARKETCAP: string | undefined = process.env.COINMARKETCAP;
+const ETHERSCAN: string | undefined = process.env.ETHERSCAN;
+const PRIVATE_KEY: string | undefined = `0x${process.env.PRIVATE_KEY}`;
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -22,6 +24,10 @@ const config: HardhatUserConfig = {
         blockNumber: 12268090,
       },
       chainId: 1337,
+    },
+    mainnet: {
+      url: ALCHEMY_MAINNET,
+      accounts: [PRIVATE_KEY],
     },
   },
   solidity: {
@@ -57,6 +63,9 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
+  },
+  etherscan: {
+    apiKey: ETHERSCAN,
   },
 };
 

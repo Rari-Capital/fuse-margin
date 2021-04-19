@@ -94,4 +94,10 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         }
         return (tokens, addresses);
     }
+
+    /// @dev Returns number of positions created
+    /// @return Length of positions array
+    function positionsLength() external view override returns (uint256) {
+        return positions.length;
+    }
 }

@@ -54,4 +54,8 @@ interface IFuseMarginController {
     /// @param contractAddress Address of FuseMargin contract
     /// @return true if approved, false if not
     function approvedContracts(address contractAddress) external view returns (bool);
+
+    /// @dev Returns number of positions created
+    /// @return Length of positions array
+    function positionsLength() external view returns (uint256);
 }
