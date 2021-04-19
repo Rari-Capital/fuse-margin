@@ -10,6 +10,7 @@ import { IFuseMarginController } from "./IFuseMarginController.sol";
 interface IFuseMarginV1 {
     /// @dev FuseMarginController contract
     function fuseMarginController() external view returns (IFuseMarginController);
+
     /// @dev Position contract address
     function positionImplementation() external view returns (address);
 
