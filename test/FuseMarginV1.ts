@@ -100,7 +100,7 @@ describe("FuseMarginV1", () => {
     expect(getPositionImplementation).to.equal(position.address);
   });
 
-  it("test 0x swap", async () => {
+  it("should open and close position", async () => {
     await network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [impersonateAddress],
@@ -141,9 +141,12 @@ describe("FuseMarginV1", () => {
       pairToken = await uniswapPair.token0();
     }
 
+    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
+    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
+
     await fuseMarginV1
       .connect(impersonateSigner)
-      .openPositionBaseUniswap(
+      .openPosition(
         daiUNIV2Address,
         wbtcAddress,
         daiAddress,
@@ -185,7 +188,7 @@ describe("FuseMarginV1", () => {
 
     await fuseMarginV1
       .connect(impersonateSigner)
-      .closePositionBaseUniswap(
+      .closePosition(
         wbtcUNIV2Address,
         wbtcAddress,
         daiAddress,

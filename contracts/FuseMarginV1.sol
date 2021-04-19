@@ -39,7 +39,7 @@ contract FuseMarginV1 is Uniswap {
         _;
     }
 
-    function openPositionBaseUniswap(
+    function openPosition(
         IUniswapV2Pair pair,
         address base,
         address quote,
@@ -57,7 +57,7 @@ contract FuseMarginV1 is Uniswap {
         return fuseMarginController.newPosition(msg.sender, newPosition);
     }
 
-    function closePositionBaseUniswap(
+    function closePosition(
         IUniswapV2Pair pair,
         address base,
         address quote,
