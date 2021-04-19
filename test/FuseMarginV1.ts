@@ -10,6 +10,7 @@ import {
   FuseMarginController__factory,
   FuseMarginV1__factory,
   Position__factory,
+  CErc20Interface,
   IUniswapV2Pair,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
@@ -21,6 +22,7 @@ import {
   impersonateAddress,
   fusePool4,
   fr4WBTCAddress,
+  wbtcUNIV2Address,
   fr4DAIAddress,
   daiUNIV2Address,
   wethAddress,
@@ -112,9 +114,9 @@ describe("FuseMarginV1", () => {
     const quoteTo = "0xdef1c0ded9bec7f1a1670819833240f027b25eff";
     // why the USDC/DAI Uniswap pair doesnt work: 0x itself routes through there
     const quoteData =
-      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be0000000000000000000000000000000000000000000000000000000000000004077d7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd000000000000000000000000100000000000000000000000000000000000001100000000000000000000000000000000000000000000006b7e6e86c26078bd19";
+      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
     const exchangeData = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quoteTo, quoteData]);
-
+    // https://api.0x.org/swap/v1/quote?sellToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&buyToken=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&sellAmount=3000000000000000000000&excludedSources=Uniswap_V2&slippagePercentage=1
     const fusePool = ethers.utils.defaultAbiCoder.encode(
       ["address", "address", "address"],
       [fusePool4, fr4WBTCAddress, fr4DAIAddress],
@@ -151,6 +153,60 @@ describe("FuseMarginV1", () => {
         amount1Out,
         fusePool,
         exchangeData,
+      );
+
+    const fr4WBTC = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4WBTCAddress,
+    )) as CErc20Interface;
+    const fr4WBTCToken = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+      fr4WBTCAddress,
+    )) as ERC20;
+    const fr4DAI = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4DAIAddress,
+    )) as CErc20Interface;
+    const fr4DAIToken = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+      fr4DAIAddress,
+    )) as ERC20;
+    const tokens = await fuseMarginController.tokensOfOwner(impersonateAddress);
+    console.log(
+      ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
+      (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
+    );
+    console.log(
+      ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
+      (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
+    );
+
+    await fuseMarginV1
+      .connect(impersonateSigner)
+      .closePositionBaseUniswap(
+        wbtcUNIV2Address,
+        wbtcAddress,
+        daiAddress,
+        wethAddress,
+        BigNumber.from(0),
+        BigNumber.from("5341854"),
+        amount1Out,
+        fusePool,
+        ethers.utils.defaultAbiCoder.encode(
+          ["address", "bytes"],
+          [
+            quoteTo,
+            "0xd9627aa40000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000051829e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000b998aed513607d1520",
+          ],
+        ),
+      );
+      console.log(
+        ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
+        (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
+      );
+      console.log(
+        ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
+        (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
       );
 
     await network.provider.request({

@@ -10,6 +10,7 @@ export const fr4ETHAddress: string = "0x95FD9Ac18D72C84D47442181828202b9ec8419C6
 export const daiAddress: string = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 export const wbtcAddress: string = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
 export const daiUNIV2Address: string = "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11";
+export const wbtcUNIV2Address: string = "0xBb2b8038a1640196FbE3e38816F3e67Cba72D940";
 export const impersonateAddress: string = "0x0F4ee9631f4be0a63756515141281A3E2B293Bbe";
 export const wethAddress: string = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const usdcAddress: string = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
