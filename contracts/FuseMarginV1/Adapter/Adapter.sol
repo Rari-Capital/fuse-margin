@@ -65,13 +65,26 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         address position,
         address base,
         address quote,
-        uint256 redeemTokens,
         bytes memory fusePool
     ) internal returns (uint256) {
         (, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
+        uint256 redeemTokens = IERC20(cBase).balanceOf(position);
         uint256 repayAmount = CErc20Interface(cQuote).borrowBalanceCurrent(position);
         IERC20(quote).safeTransfer(position, repayAmount);
         IPosition(position).repayAndRedeem(base, cBase, quote, cQuote, redeemTokens, repayAmount);
         return repayAmount;
+    }
+
+    function _repayAndRedeemQuote(
+        address position,
+        address base,
+        address quote,
+        uint256 repayAmount,
+        bytes memory fusePool
+    ) internal {
+        (, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
+        uint256 redeemTokens = IERC20(cBase).balanceOf(position);
+        IERC20(quote).safeTransfer(position, repayAmount);
+        IPosition(position).repayAndRedeem(base, cBase, quote, cQuote, redeemTokens, repayAmount);
     }
 }
