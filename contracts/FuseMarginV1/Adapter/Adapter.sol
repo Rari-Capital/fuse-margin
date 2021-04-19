@@ -9,6 +9,7 @@ import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswap
 import { ISoloMargin } from "../../interfaces/ISoloMargin.sol";
 import { ICallee } from "../../interfaces/ICallee.sol";
 import { IPosition } from "../../interfaces/IPosition.sol";
+import { CErc20Interface } from "../../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Aave flash loan contract
@@ -35,16 +36,16 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
     }
 
     function _swap(
-        address base,
-        address quote,
+        address from,
+        address to,
         uint256 amount,
         bytes memory exchangeData
     ) internal returns (uint256) {
         (address exchange, bytes memory data) = abi.decode(exchangeData, (address, bytes));
-        IERC20(quote).safeApprove(exchange, amount);
+        IERC20(from).safeApprove(exchange, amount);
         (bool success, ) = exchange.call(data);
         if (!success) revert("Adapter: Swap failed");
-        return IERC20(base).balanceOf(address(this));
+        return IERC20(to).balanceOf(address(this));
     }
 
     function _mintAndBorrow(
@@ -65,12 +66,12 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         address base,
         address quote,
         uint256 redeemTokens,
-        uint256 repayAmount,
         bytes memory fusePool
-    ) internal {
+    ) internal returns (uint256) {
         (, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
-        // uint256 repayAmount = CErc20Interface(cQuote).borrowBalanceCurrent(position);
+        uint256 repayAmount = CErc20Interface(cQuote).borrowBalanceCurrent(position);
         IERC20(quote).safeTransfer(position, repayAmount);
         IPosition(position).repayAndRedeem(base, cBase, quote, cQuote, redeemTokens, repayAmount);
+        return repayAmount;
     }
 }

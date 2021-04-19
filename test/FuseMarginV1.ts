@@ -126,7 +126,6 @@ describe("FuseMarginV1", () => {
     )) as ERC20;
     await WBTC.connect(impersonateSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
 
-
     const uniswapPair = (await ethers.getContractAt(
       "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol:IUniswapV2Pair",
       daiUNIV2Address,

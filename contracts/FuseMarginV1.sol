@@ -35,6 +35,11 @@ contract FuseMarginV1 is Uniswap, DYDX {
         positionImplementation = _positionImplementation;
     }
 
+    modifier isOwner(uint256 tokenId) {
+        require(msg.sender == fuseMarginERC721.ownerOf(tokenId), "FuseMarginV1: Not owner of position");
+        _;
+    }
+
     function openPositionBaseUniswap(
         IUniswapV2Pair pair,
         address base,
@@ -48,9 +53,35 @@ contract FuseMarginV1 is Uniswap, DYDX {
     ) external returns (uint256) {
         IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
         address newPosition = _newPosition();
-        bytes memory data = abi.encode(newPosition, base, quote, pairToken, fusePool, exchangeData);
+        bytes memory data = abi.encode(0, msg.sender, newPosition, base, quote, pairToken, fusePool, exchangeData);
         pair.swap(amount0Out, amount1Out, address(this), data);
         return fuseMarginController.newPosition(msg.sender, newPosition);
+    }
+
+    function closePositionBaseUniswap(
+        IUniswapV2Pair pair,
+        address base,
+        address quote,
+        address pairToken,
+        uint256 tokenId,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        bytes calldata fusePool,
+        bytes calldata exchangeData
+    ) external isOwner(tokenId) {
+        bytes memory data =
+            abi.encode(
+                2,
+                msg.sender,
+                fuseMarginController.positions(tokenId),
+                base,
+                quote,
+                pairToken,
+                fusePool,
+                exchangeData
+            );
+        pair.swap(amount0Out, amount1Out, address(this), data);
+        fuseMarginController.closePosition(tokenId);
     }
 
     function _newPosition() internal returns (address) {
