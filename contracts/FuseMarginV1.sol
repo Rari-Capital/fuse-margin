@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.6;
-pragma experimental ABIEncoderV2;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -12,7 +11,6 @@ import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 import { Adapter } from "./FuseMarginV1/Adapter/Adapter.sol";
 import { Uniswap } from "./FuseMarginV1/FlashLoan/Uniswap.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
-import { CErc20Interface } from "./interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
