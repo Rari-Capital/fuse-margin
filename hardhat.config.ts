@@ -13,7 +13,7 @@ dotenv.config();
 const ALCHEMY_MAINNET: string = "https://eth-mainnet.alchemyapi.io/v2/" + process.env.ALCHEMY_API_KEY;
 const COINMARKETCAP: string | undefined = process.env.COINMARKETCAP;
 const ETHERSCAN: string | undefined = process.env.ETHERSCAN;
-const PRIVATE_KEY: string | undefined = `0x${process.env.PRIVATE_KEY}`;
+const PRIVATE_KEY: string = `0x${process.env.PRIVATE_KEY}`;
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
