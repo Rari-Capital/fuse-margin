@@ -5,16 +5,16 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import { IPosition } from "../../interfaces/IPosition.sol";
 import { CErc20Interface } from "../../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
-/// @title Aave flash loan contract
-abstract contract Adapter is IUniswapV2Callee {
+/// @title Swapping and minting/borrowing/repaying/redeeming functions
+abstract contract Adapter {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    /// @dev Uniswap V2 factory address
     address public immutable uniswapFactory;
 
     /// @param _uniswapFactory Uniswap V2 factory address

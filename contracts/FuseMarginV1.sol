@@ -20,10 +20,16 @@ contract FuseMarginV1 is Uniswap {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    /// @dev FuseMarginController contract
     IFuseMarginController public immutable fuseMarginController;
+    /// @dev FuseMarginController contract ERC721 interface
     IERC721 public immutable fuseMarginERC721;
+    /// @dev Position contract address
     address public immutable positionImplementation;
 
+    /// @param _fuseMarginController FuseMarginController address
+    /// @param _positionImplementation Position address
+    /// @param _uniswapFactory Uniswap V2 Factory address
     constructor(
         address _fuseMarginController,
         address _positionImplementation,

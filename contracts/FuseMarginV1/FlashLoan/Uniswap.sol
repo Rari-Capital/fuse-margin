@@ -5,17 +5,18 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import { UniswapV2Library } from "../../libraries/UniswapV2Library.sol";
 import { Adapter } from "../Adapter/Adapter.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Aave flash loan contract
-abstract contract Uniswap is Adapter {
+abstract contract Uniswap is Adapter, IUniswapV2Callee {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /// @dev Uniswap flash loan/swap callback. Receives the token amount and gives it back + fees
-    /// @param sender The msg.sender to Uniswap
+    /// @param sender The msg.sender who called the Uniswap pair
     /// @param amount0 Amount of token0 received
     /// @param amount1 Amount of token1 received
     function uniswapV2Call(
@@ -62,7 +63,7 @@ abstract contract Uniswap is Adapter {
         uint256 depositAmount = _swap(quote, base, amount, exchangeData);
         _mintAndBorrow(position, base, quote, depositAmount, _uniswapLoanFees(amount), fusePool);
         // Send the pair the owed amount + flashFee
-        IERC20(quote).transfer(msg.sender, _uniswapLoanFees(amount));
+        IERC20(quote).safeTransfer(msg.sender, _uniswapLoanFees(amount));
     }
 
     function _closePositionBaseUniswap(
@@ -77,9 +78,10 @@ abstract contract Uniswap is Adapter {
         uint256 receivedAmount = _swap(base, quote, amount, exchangeData);
         uint256 leftoverAmount = receivedAmount.sub(_repayAndRedeem(position, base, quote, fusePool));
         // Send the pair the owed amount + flashFee
-        IERC20(base).transfer(msg.sender, _uniswapLoanFees(amount));
-        IERC20(base).transfer(user, IERC20(base).balanceOf(address(this)));
-        IERC20(quote).transfer(user, leftoverAmount);
+        IERC20(base).safeTransfer(msg.sender, _uniswapLoanFees(amount));
+        // Send the user the profit + leftover dust tokens
+        IERC20(base).safeTransfer(user, IERC20(base).balanceOf(address(this)));
+        IERC20(quote).safeTransfer(user, leftoverAmount);
     }
 
     function _uniswapLoanFees(uint256 amount) internal pure returns (uint256) {
