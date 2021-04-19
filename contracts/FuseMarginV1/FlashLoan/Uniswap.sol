@@ -15,7 +15,7 @@ abstract contract Uniswap is Adapter {
     using SafeERC20 for IERC20;
 
     /// @dev Uniswap flash loan/swap callback. Receives the token amount and gives it back + fees
-    /// @param sender The msg.sender to Solo
+    /// @param sender The msg.sender to Uniswap
     /// @param amount0 Amount of token0 received
     /// @param amount1 Amount of token1 received
     function uniswapV2Call(
@@ -44,11 +44,6 @@ abstract contract Uniswap is Adapter {
             _openPositionBaseUniswap(amount, position, base, quote, fusePool, exchangeData);
         } else if (action == 1) {
             require(
-                msg.sender == UniswapV2Library.pairFor(uniswapFactory, quote, pairToken),
-                "Uniswap: only permissioned UniswapV2 pair can call"
-            );
-        } else if (action == 2) {
-            require(
                 msg.sender == UniswapV2Library.pairFor(uniswapFactory, base, pairToken),
                 "Uniswap: only permissioned UniswapV2 pair can call"
             );
@@ -70,20 +65,6 @@ abstract contract Uniswap is Adapter {
         IERC20(quote).transfer(msg.sender, _uniswapLoanFees(amount));
     }
 
-    function _openPositionQuoteUniswap(
-        uint256 amount,
-        address position,
-        address base,
-        address quote,
-        bytes memory fusePool,
-        bytes memory exchangeData
-    ) internal {
-        uint256 depositAmount = _swap(quote, base, amount.add(IERC20(quote).balanceOf(address(this))), exchangeData);
-        _mintAndBorrow(position, base, quote, depositAmount, _uniswapLoanFees(amount), fusePool);
-        // Send the pair the owed amount + flashFee
-        IERC20(quote).transfer(msg.sender, _uniswapLoanFees(amount));
-    }
-
     function _closePositionBaseUniswap(
         uint256 amount,
         address user,
@@ -99,22 +80,6 @@ abstract contract Uniswap is Adapter {
         IERC20(base).transfer(msg.sender, _uniswapLoanFees(amount));
         IERC20(base).transfer(user, IERC20(base).balanceOf(address(this)));
         IERC20(quote).transfer(user, leftoverAmount);
-    }
-
-    function _closePositionQuoteUniswap(
-        uint256 amount,
-        address user,
-        address position,
-        address base,
-        address quote,
-        bytes memory fusePool,
-        bytes memory exchangeData
-    ) internal {
-        _repayAndRedeemQuote(position, base, quote, amount, fusePool);
-        uint256 receivedAmount = _swap(base, quote, IERC20(base).balanceOf(address(this)), exchangeData);
-        IERC20(quote).transfer(msg.sender, _uniswapLoanFees(amount));
-        IERC20(base).transfer(user, receivedAmount);
-        IERC20(quote).transfer(user, IERC20(quote).balanceOf(address(this)));
     }
 
     function _uniswapLoanFees(uint256 amount) internal pure returns (uint256) {

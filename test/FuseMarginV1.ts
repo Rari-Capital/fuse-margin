@@ -1,7 +1,6 @@
 import { ethers, network } from "hardhat";
 import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
-import fetch from "node-fetch";
 import {
   FuseMarginController,
   FuseMarginV1,
@@ -15,7 +14,6 @@ import {
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
 import {
-  soloMarginAddress,
   uniswapFactoryAddress,
   daiAddress,
   wbtcAddress,
@@ -67,7 +65,6 @@ describe("FuseMarginV1", () => {
       fuseMarginController.address,
       position.address,
       uniswapFactoryAddress,
-      soloMarginAddress,
     );
     await fuseMarginController.addMarginContract(fuseMarginV1.address);
   });
@@ -95,8 +92,6 @@ describe("FuseMarginV1", () => {
     expect(fuseMarginController0).to.equal(fuseMarginController.address);
     const getUniswapFactory: string = await fuseMarginV1.uniswapFactory();
     expect(getUniswapFactory).to.equal(uniswapFactoryAddress);
-    const getSoloMargin: string = await fuseMarginV1.soloMargin();
-    expect(getSoloMargin).to.equal(soloMarginAddress);
     const getFuseMarginController1: string = await fuseMarginV1.fuseMarginController();
     expect(getFuseMarginController1).to.equal(fuseMarginController.address);
     const getFuseMarginERC721: string = await fuseMarginV1.fuseMarginERC721();
@@ -121,6 +116,11 @@ describe("FuseMarginV1", () => {
       ["address", "address", "address"],
       [fusePool4, fr4WBTCAddress, fr4DAIAddress],
     );
+
+    const DAI: ERC20 = (await ethers.getContractAt(
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+      daiAddress,
+    )) as ERC20;
 
     const WBTC: ERC20 = (await ethers.getContractAt(
       "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
@@ -180,6 +180,8 @@ describe("FuseMarginV1", () => {
       ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
       (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
     );
+    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
+    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
 
     await fuseMarginV1
       .connect(impersonateSigner)
@@ -200,14 +202,16 @@ describe("FuseMarginV1", () => {
           ],
         ),
       );
-      console.log(
-        ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
-        (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
-      );
-      console.log(
-        ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
-        (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
-      );
+    console.log(
+      ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
+      (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
+    );
+    console.log(
+      ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
+      (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
+    );
+    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
+    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
 
     await network.provider.request({
       method: "hardhat_stopImpersonatingAccount",

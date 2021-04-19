@@ -6,33 +6,20 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
-import { ISoloMargin } from "../../interfaces/ISoloMargin.sol";
-import { ICallee } from "../../interfaces/ICallee.sol";
 import { IPosition } from "../../interfaces/IPosition.sol";
 import { CErc20Interface } from "../../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Aave flash loan contract
-abstract contract Adapter is IUniswapV2Callee, ICallee {
+abstract contract Adapter is IUniswapV2Callee {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     address public immutable uniswapFactory;
-    ISoloMargin public immutable soloMargin;
-
-    mapping(address => uint256) internal tokenAddressToMarketId;
 
     /// @param _uniswapFactory Uniswap V2 factory address
-    /// @param _soloMargin DYDX solo margin address
-    constructor(address _uniswapFactory, address _soloMargin) {
+    constructor(address _uniswapFactory) {
         uniswapFactory = _uniswapFactory;
-        soloMargin = ISoloMargin(_soloMargin);
-        // Setup state variables
-        uint256 numMarkets = ISoloMargin(_soloMargin).getNumMarkets();
-        for (uint256 marketId = 0; marketId < numMarkets; marketId++) {
-            address token = ISoloMargin(_soloMargin).getMarketTokenAddress(marketId);
-            tokenAddressToMarketId[token] = marketId;
-        }
     }
 
     function _swap(
@@ -73,18 +60,5 @@ abstract contract Adapter is IUniswapV2Callee, ICallee {
         IERC20(quote).safeTransfer(position, repayAmount);
         IPosition(position).repayAndRedeem(base, cBase, quote, cQuote, redeemTokens, repayAmount);
         return repayAmount;
-    }
-
-    function _repayAndRedeemQuote(
-        address position,
-        address base,
-        address quote,
-        uint256 repayAmount,
-        bytes memory fusePool
-    ) internal {
-        (, address cBase, address cQuote) = abi.decode(fusePool, (address, address, address));
-        uint256 redeemTokens = IERC20(cBase).balanceOf(position);
-        IERC20(quote).safeTransfer(position, repayAmount);
-        IPosition(position).repayAndRedeem(base, cBase, quote, cQuote, redeemTokens, repayAmount);
     }
 }

@@ -11,13 +11,12 @@ import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 import { Adapter } from "./FuseMarginV1/Adapter/Adapter.sol";
 import { Uniswap } from "./FuseMarginV1/FlashLoan/Uniswap.sol";
-import { DYDX } from "./FuseMarginV1/FlashLoan/DYDX.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
 import { CErc20Interface } from "./interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
-contract FuseMarginV1 is Uniswap, DYDX {
+contract FuseMarginV1 is Uniswap {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -28,9 +27,8 @@ contract FuseMarginV1 is Uniswap, DYDX {
     constructor(
         address _fuseMarginController,
         address _positionImplementation,
-        address _uniswapFactory,
-        address _soloMargin
-    ) Adapter(_uniswapFactory, _soloMargin) {
+        address _uniswapFactory
+    ) Adapter(_uniswapFactory) {
         fuseMarginController = IFuseMarginController(_fuseMarginController);
         fuseMarginERC721 = IERC721(_fuseMarginController);
         positionImplementation = _positionImplementation;
@@ -59,24 +57,6 @@ contract FuseMarginV1 is Uniswap, DYDX {
         return fuseMarginController.newPosition(msg.sender, newPosition);
     }
 
-    function openPositionQuoteUniswap(
-        IUniswapV2Pair pair,
-        address base,
-        address quote,
-        address pairToken,
-        uint256 providedAmount,
-        uint256 amount0Out,
-        uint256 amount1Out,
-        bytes calldata fusePool,
-        bytes calldata exchangeData
-    ) external returns (uint256) {
-        IERC20(quote).safeTransferFrom(msg.sender, address(this), providedAmount);
-        address newPosition = _newPosition();
-        bytes memory data = abi.encode(1, msg.sender, newPosition, base, quote, pairToken, fusePool, exchangeData);
-        pair.swap(amount0Out, amount1Out, address(this), data);
-        return fuseMarginController.newPosition(msg.sender, newPosition);
-    }
-
     function closePositionBaseUniswap(
         IUniswapV2Pair pair,
         address base,
@@ -90,7 +70,7 @@ contract FuseMarginV1 is Uniswap, DYDX {
     ) external isOwner(tokenId) {
         bytes memory data =
             abi.encode(
-                2,
+                1,
                 msg.sender,
                 fuseMarginController.positions(tokenId),
                 base,
@@ -99,29 +79,6 @@ contract FuseMarginV1 is Uniswap, DYDX {
                 fusePool,
                 exchangeData
             );
-        pair.swap(amount0Out, amount1Out, address(this), data);
-        fuseMarginController.closePosition(tokenId);
-    }
-
-    function closePositionQuoteUniswap(
-        IUniswapV2Pair pair,
-        address base,
-        address quote,
-        address pairToken,
-        address cQuote,
-        uint256 tokenId,
-        bool amountIsZero,
-        bytes calldata fusePool,
-        bytes calldata exchangeData
-    ) external isOwner(tokenId) {
-        address position = fuseMarginController.positions(tokenId);
-        bytes memory data = abi.encode(4, msg.sender, position, base, quote, pairToken, fusePool, exchangeData);
-        uint256 amount0Out;
-        uint256 amount1Out = CErc20Interface(cQuote).borrowBalanceCurrent(position);
-        if (amountIsZero) {
-            amount0Out = amount1Out;
-            amount1Out = 0;
-        }
         pair.swap(amount0Out, amount1Out, address(this), data);
         fuseMarginController.closePosition(tokenId);
     }

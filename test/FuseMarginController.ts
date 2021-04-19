@@ -10,7 +10,7 @@ import {
   Position__factory,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
-import { soloMarginAddress, uniswapFactoryAddress } from "../scripts/constants/addresses";
+import { uniswapFactoryAddress } from "../scripts/constants/addresses";
 
 describe("FuseMarginController", () => {
   let accounts: Signer[];
@@ -49,7 +49,6 @@ describe("FuseMarginController", () => {
       fuseMarginController.address,
       position.address,
       uniswapFactoryAddress,
-      soloMarginAddress,
     );
   });
 
@@ -72,8 +71,6 @@ describe("FuseMarginController", () => {
     expect(fuseMarginController0).to.equal(fuseMarginController.address);
     const getUniswapFactory: string = await fuseMarginV1.uniswapFactory();
     expect(getUniswapFactory).to.equal(uniswapFactoryAddress);
-    const getSoloMargin: string = await fuseMarginV1.soloMargin();
-    expect(getSoloMargin).to.equal(soloMarginAddress);
     const getFuseMarginController1: string = await fuseMarginV1.fuseMarginController();
     expect(getFuseMarginController1).to.equal(fuseMarginController.address);
     const getFuseMarginERC721: string = await fuseMarginV1.fuseMarginERC721();
@@ -121,7 +118,6 @@ describe("FuseMarginController", () => {
       fuseMarginController.address,
       position.address,
       uniswapFactoryAddress,
-      soloMarginAddress,
     );
     await expect(fuseMarginController.marginContracts(BigNumber.from(1))).to.be.reverted;
     const getApprovedContract2: boolean = await fuseMarginController.approvedContracts(fuseMarginV10.address);
@@ -146,7 +142,6 @@ describe("FuseMarginController", () => {
       fuseMarginController.address,
       position.address,
       uniswapFactoryAddress,
-      soloMarginAddress,
     );
     await expect(fuseMarginController.removeMarginContract(fuseMarginV10.address)).to.be.revertedWith(
       "FuseMarginController: Does not exist",
