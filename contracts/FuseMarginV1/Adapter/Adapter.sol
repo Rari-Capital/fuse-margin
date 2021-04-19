@@ -9,7 +9,7 @@ import { CErc20Interface } from "../../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Swapping and minting/borrowing/repaying/redeeming functions
-abstract contract Adapter {
+contract Adapter {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 

@@ -9,7 +9,7 @@ import { UniswapV2Library } from "../../libraries/UniswapV2Library.sol";
 import { Adapter } from "../Adapter/Adapter.sol";
 
 /// @author Ganesh Gautham Elango
-/// @title Aave flash loan contract
+/// @title Uniswap flash loan contract
 abstract contract Uniswap is Adapter, IUniswapV2Callee {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
