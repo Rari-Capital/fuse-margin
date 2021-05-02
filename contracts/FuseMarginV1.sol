@@ -65,9 +65,9 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         bytes calldata fusePool,
         bytes calldata exchangeData
     ) external override returns (uint256) {
-        IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
         address newPosition = _newPosition();
         bytes memory data = abi.encode(0, msg.sender, newPosition, base, quote, pairToken, fusePool, exchangeData);
+        IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
         pair.swap(amount0Out, amount1Out, address(this), data);
         return fuseMarginController.newPosition(msg.sender, newPosition);
     }
