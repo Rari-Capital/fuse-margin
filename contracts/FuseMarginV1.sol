@@ -65,11 +65,14 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         bytes calldata fusePool,
         bytes calldata exchangeData
     ) external override returns (uint256) {
-        address newPosition = _newPosition();
-        bytes memory data = abi.encode(0, msg.sender, newPosition, base, quote, pairToken, fusePool, exchangeData);
-        IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
-        pair.swap(amount0Out, amount1Out, address(this), data);
-        return fuseMarginController.newPosition(msg.sender, newPosition);
+        return
+            _openPosition(
+                pair,
+                [base, quote, pairToken],
+                [providedAmount, amount0Out, amount1Out],
+                fusePool,
+                exchangeData
+            );
     }
 
     /// @dev Closes an existing position, caller must own tokenId
@@ -108,9 +111,34 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         fuseMarginController.closePosition(tokenId);
     }
 
-    function _newPosition() internal returns (address) {
+    function _openPosition(
+        IUniswapV2Pair pair,
+        address[3] memory addressArgs, /* [base, quote, pairToken] */
+        uint256[3] memory uintArgs, /* [providedAmount, amount0Out, amount1Out] */
+        bytes calldata fusePool,
+        bytes calldata exchangeData
+    ) internal returns (uint256) {
+        (address newPosition, uint256 tokenId) = _newPosition();
+        IERC20(addressArgs[0]).safeTransferFrom(msg.sender, address(this), uintArgs[0]);
+        bytes memory data =
+            abi.encode(
+                0,
+                msg.sender,
+                newPosition,
+                addressArgs[0],
+                addressArgs[1],
+                addressArgs[2],
+                fusePool,
+                exchangeData
+            );
+        pair.swap(uintArgs[1], uintArgs[2], address(this), data);
+        return tokenId;
+    }
+
+    function _newPosition() internal returns (address, uint256) {
         address newPosition = Clones.clone(positionImplementation);
         IPosition(newPosition).initialize(fuseMarginController);
-        return newPosition;
+        uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
+        return (newPosition, tokenId);
     }
 }
