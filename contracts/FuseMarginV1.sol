@@ -65,14 +65,10 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         bytes calldata fusePool,
         bytes calldata exchangeData
     ) external override returns (uint256) {
-        return
-            _openPosition(
-                pair,
-                [base, quote, pairToken],
-                [providedAmount, amount0Out, amount1Out],
-                fusePool,
-                exchangeData
-            );
+        (address newPosition, uint256 tokenId) = _newPosition();
+        bytes memory data = _openPosition(newPosition, base, quote, pairToken, providedAmount, fusePool, exchangeData);
+        pair.swap(amount0Out, amount1Out, address(this), data);
+        return tokenId;
     }
 
     /// @dev Closes an existing position, caller must own tokenId
@@ -111,34 +107,23 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         fuseMarginController.closePosition(tokenId);
     }
 
-    function _openPosition(
-        IUniswapV2Pair pair,
-        address[3] memory addressArgs, /* [base, quote, pairToken] */
-        uint256[3] memory uintArgs, /* [providedAmount, amount0Out, amount1Out] */
-        bytes calldata fusePool,
-        bytes calldata exchangeData
-    ) internal returns (uint256) {
-        (address newPosition, uint256 tokenId) = _newPosition();
-        IERC20(addressArgs[0]).safeTransferFrom(msg.sender, address(this), uintArgs[0]);
-        bytes memory data =
-            abi.encode(
-                0,
-                msg.sender,
-                newPosition,
-                addressArgs[0],
-                addressArgs[1],
-                addressArgs[2],
-                fusePool,
-                exchangeData
-            );
-        pair.swap(uintArgs[1], uintArgs[2], address(this), data);
-        return tokenId;
-    }
-
     function _newPosition() internal returns (address, uint256) {
         address newPosition = Clones.clone(positionImplementation);
         IPosition(newPosition).initialize(fuseMarginController);
         uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
         return (newPosition, tokenId);
+    }
+
+    function _openPosition(
+        address newPosition,
+        address base,
+        address quote,
+        address pairToken,
+        uint256 providedAmount,
+        bytes calldata fusePool,
+        bytes calldata exchangeData
+    ) internal returns (bytes memory) {
+        IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
+        return abi.encode(0, msg.sender, newPosition, base, quote, pairToken, fusePool, exchangeData);
     }
 }
