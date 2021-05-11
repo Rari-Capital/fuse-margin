@@ -113,9 +113,6 @@ describe("FuseMarginV1", () => {
   });
 
   it("should revert if not controller owner", async () => {
-    await expect(fuseMarginV1.connect(attacker).proxyCall(ethers.constants.AddressZero, "0x")).to.be.revertedWith(
-      "FuseMarginV1: Not owner of controller",
-    );
     await expect(
       fuseMarginV1.connect(attacker).transferETH(ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("FuseMarginV1: Not owner of controller");
@@ -146,25 +143,6 @@ describe("FuseMarginV1", () => {
     await expect(
       fuseMarginV1.connect(attacker).uniswapV2Call(fuseMarginV1.address, BigNumber.from(0), BigNumber.from(0), data),
     ).to.be.revertedWith("Uniswap: only permissioned UniswapV2 pair can call");
-  });
-
-  it("should perform proxy call", async () => {
-    const wethBalance0 = await WETH9.balanceOf(fuseMarginV1.address);
-    expect(wethBalance0).to.equal(BigNumber.from(0));
-    const wethDepositCall: string = WETH9.interface.encodeFunctionData("deposit");
-    const wethDepositAmount = ethers.utils.parseEther("1");
-    await fuseMarginV1.proxyCall(WETH9.address, wethDepositCall, { value: wethDepositAmount });
-    const wethBalance1 = await WETH9.balanceOf(fuseMarginV1.address);
-    expect(wethBalance1).to.equal(wethDepositAmount);
-
-    const wethWithdrawCall: string = WETH9.interface.encodeFunctionData("withdraw", [wethDepositAmount]);
-    const ethBalance2 = await ethers.provider.getBalance(fuseMarginV1.address);
-    expect(ethBalance2).to.equal(BigNumber.from(0));
-    await fuseMarginV1.proxyCall(WETH9.address, wethWithdrawCall);
-    const wethBalance3 = await WETH9.balanceOf(fuseMarginV1.address);
-    expect(wethBalance3).to.equal(BigNumber.from(0));
-    const ethBalance3 = await ethers.provider.getBalance(fuseMarginV1.address);
-    expect(ethBalance3).to.equal(wethDepositAmount);
   });
 
   it("should transfer ETH and tokens", async () => {

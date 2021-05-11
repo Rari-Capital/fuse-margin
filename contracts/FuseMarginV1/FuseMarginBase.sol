@@ -29,21 +29,6 @@ abstract contract FuseMarginBase is IFuseMarginV1 {
         _;
     }
 
-    /// @dev Allows for generalized calls through this contract
-    /// @param target Contract address to call
-    /// @param callData ABI encoded function/params
-    /// @return Whether call was successful
-    /// @return Return bytes
-    function proxyCall(address target, bytes calldata callData)
-        external
-        payable
-        isControllerOwner
-        returns (bool, bytes memory)
-    {
-        (bool success, bytes memory result) = target.call{ value: msg.value }(callData);
-        return (success, result);
-    }
-
     /// @dev Transfer ETH balance
     /// @param to Address to send to
     /// @param amount Amount of ETH to send
