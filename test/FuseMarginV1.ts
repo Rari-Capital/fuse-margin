@@ -139,10 +139,10 @@ describe("FuseMarginV1", () => {
     );
     await expect(
       fuseMarginV1.connect(attacker).uniswapV2Call(owner.address, BigNumber.from(0), BigNumber.from(0), data),
-    ).to.be.revertedWith("Uniswap: Only this contract may initiate");
+    ).to.be.revertedWith("FuseMarginV1: Only this contract may initiate");
     await expect(
       fuseMarginV1.connect(attacker).uniswapV2Call(fuseMarginV1.address, BigNumber.from(0), BigNumber.from(0), data),
-    ).to.be.revertedWith("Uniswap: only permissioned UniswapV2 pair can call");
+    ).to.be.revertedWith("FuseMarginV1: only permissioned UniswapV2 pair can call");
   });
 
   it("should transfer ETH and tokens", async () => {

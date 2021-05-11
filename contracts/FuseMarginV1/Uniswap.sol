@@ -33,7 +33,7 @@ contract Uniswap is IUniswapV2Callee {
         uint256 amount1,
         bytes calldata data
     ) external override {
-        require(sender == address(this), "Uniswap: Only this contract may initiate");
+        require(sender == address(this), "FuseMarginV1: Only this contract may initiate");
         (
             uint256 action,
             address user,
@@ -48,13 +48,13 @@ contract Uniswap is IUniswapV2Callee {
         if (action == 0) {
             require(
                 msg.sender == UniswapV2Library.pairFor(uniswapFactory, quote, pairToken),
-                "Uniswap: only permissioned UniswapV2 pair can call"
+                "FuseMarginV1: only permissioned UniswapV2 pair can call"
             );
             _openPositionBaseUniswap(amount, position, base, quote, fusePool, exchangeData);
         } else if (action == 1) {
             require(
                 msg.sender == UniswapV2Library.pairFor(uniswapFactory, base, pairToken),
-                "Uniswap: only permissioned UniswapV2 pair can call"
+                "FuseMarginV1: only permissioned UniswapV2 pair can call"
             );
             _closePositionBaseUniswap(amount, user, position, base, quote, fusePool, exchangeData);
         }
@@ -101,7 +101,7 @@ contract Uniswap is IUniswapV2Callee {
         (address exchange, bytes memory data) = abi.decode(exchangeData, (address, bytes));
         IERC20(from).safeApprove(exchange, amount);
         (bool success, ) = exchange.call(data);
-        if (!success) revert("Uniswap: Swap failed");
+        if (!success) revert("FuseMarginV1: Swap failed");
         return IERC20(to).balanceOf(address(this));
     }
 
