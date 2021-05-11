@@ -134,7 +134,7 @@ describe("FuseMarginV1", () => {
     ).to.be.revertedWith("Uniswap: only permissioned UniswapV2 pair can call");
   });
 
-  it("should open and close position", async () => {
+  it("should open position", async () => {
     await network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [impersonateAddress],
@@ -255,4 +255,6 @@ describe("FuseMarginV1", () => {
       params: [impersonateAddress],
     });
   });
+
+  // Should close position
 });
