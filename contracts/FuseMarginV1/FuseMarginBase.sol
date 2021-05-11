@@ -3,9 +3,9 @@ pragma solidity ^0.7.6;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { IFuseMarginController } from "../../interfaces/IFuseMarginController.sol";
-import { IOwnable } from "../../interfaces/IOwnable.sol";
-import { IFuseMarginV1 } from "../../interfaces/IFuseMarginV1.sol";
+import { IFuseMarginController } from "../interfaces/IFuseMarginController.sol";
+import { IOwnable } from "../interfaces/IOwnable.sol";
+import { IFuseMarginV1 } from "../interfaces/IFuseMarginV1.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract base

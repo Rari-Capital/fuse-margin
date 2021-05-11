@@ -5,8 +5,8 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
-import { UniswapV2Library } from "../../libraries/UniswapV2Library.sol";
-import { Adapter } from "../Adapter/Adapter.sol";
+import { UniswapV2Library } from "../libraries/UniswapV2Library.sol";
+import { Adapter } from "./Adapter.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Uniswap flash loan contract

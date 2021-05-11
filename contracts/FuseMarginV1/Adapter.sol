@@ -4,8 +4,8 @@ pragma solidity ^0.7.6;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { IPosition } from "../../interfaces/IPosition.sol";
-import { CErc20Interface } from "../../interfaces/CErc20Interface.sol";
+import { IPosition } from "../interfaces/IPosition.sol";
+import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Swapping and minting/borrowing/repaying/redeeming functions
