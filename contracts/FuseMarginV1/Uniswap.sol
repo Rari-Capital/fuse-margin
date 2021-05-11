@@ -11,7 +11,7 @@ import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Uniswap flash loan contract
-abstract contract Uniswap is IUniswapV2Callee {
+contract Uniswap is IUniswapV2Callee {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
