@@ -34,7 +34,9 @@ describe("FuseMarginV1", () => {
   let fuseMarginController: FuseMarginController;
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
+  let impersonateAddressSigner: Signer;
   let WETH9: IWETH9;
+  let DAI: ERC20;
 
   const wbtcProvidedAmount: BigNumber = BigNumber.from("50000000");
   const daiBorrowAmount: BigNumber = BigNumber.from("3000000000000000000000");
@@ -71,6 +73,20 @@ describe("FuseMarginV1", () => {
     await fuseMarginController.addMarginContract(fuseMarginV1.address);
 
     WETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
+    DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", daiAddress)) as ERC20;
+
+    impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [impersonateAddress],
+    });
+  });
+
+  afterEach(async () => {
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [impersonateAddress],
+    });
   });
 
   it("constructor should initialize state variables", async () => {
@@ -149,6 +165,29 @@ describe("FuseMarginV1", () => {
     expect(wethBalance3).to.equal(BigNumber.from(0));
     const ethBalance3 = await ethers.provider.getBalance(fuseMarginV1.address);
     expect(ethBalance3).to.equal(wethDepositAmount);
+  });
+
+  it("should transfer ETH and tokens", async () => {
+    const ethBalance0 = await ethers.provider.getBalance(fuseMarginV1.address);
+    expect(ethBalance0).to.equal(BigNumber.from(0));
+    const ethDepositAmount = ethers.utils.parseEther("1");
+    await owner.sendTransaction({ to: fuseMarginV1.address, value: ethDepositAmount });
+    const ethBalance1 = await ethers.provider.getBalance(fuseMarginV1.address);
+    expect(ethBalance1).to.equal(ethDepositAmount);
+    await fuseMarginV1.transferETH(owner.address, ethDepositAmount);
+    const ethBalance2 = await ethers.provider.getBalance(fuseMarginV1.address);
+    expect(ethBalance2).to.equal(BigNumber.from(0));
+
+    const daiBalance3 = await DAI.balanceOf(fuseMarginV1.address);
+    expect(daiBalance3).to.equal(BigNumber.from(0));
+    await DAI.connect(impersonateAddressSigner).transfer(fuseMarginV1.address, ethDepositAmount);
+    const daiBalance4 = await DAI.balanceOf(fuseMarginV1.address);
+    expect(daiBalance4).to.equal(ethDepositAmount);
+    await fuseMarginV1.transferToken(DAI.address, owner.address, ethDepositAmount);
+    const daiBalance5 = await DAI.balanceOf(fuseMarginV1.address);
+    expect(daiBalance5).to.equal(BigNumber.from(0));
+    const ownerBalance5 = await DAI.balanceOf(owner.address);
+    expect(ownerBalance5).to.equal(ethDepositAmount);
   });
 
   it("should open position", async () => {

@@ -295,11 +295,12 @@ describe("Position", () => {
     await DAI.connect(impersonateAddressSigner).transfer(position.address, ethDepositAmount);
     const daiBalance4 = await DAI.balanceOf(position.address);
     expect(daiBalance4).to.equal(ethDepositAmount);
+    const ownerBalance4 = await DAI.balanceOf(owner.address);
     await position.connect(attacker).transferToken(DAI.address, owner.address, ethDepositAmount);
     const daiBalance5 = await DAI.balanceOf(position.address);
     expect(daiBalance5).to.equal(BigNumber.from(0));
     const ownerBalance5 = await DAI.balanceOf(owner.address);
-    expect(ownerBalance5).to.equal(ethDepositAmount);
+    expect(ownerBalance5.sub(ownerBalance4)).to.equal(ethDepositAmount);
   });
 
   it("should mint ERC20s and ETH", async () => {
