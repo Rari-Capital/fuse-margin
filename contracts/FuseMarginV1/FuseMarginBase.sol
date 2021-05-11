@@ -22,7 +22,7 @@ abstract contract FuseMarginBase is IFuseMarginV1 {
 
     /// @dev Checks if caller is controller owner
     modifier isControllerOwner() {
-        require(msg.sender == IOwnable(address(fuseMarginController)).owner(), "FuseMarginV1: Not owner of position");
+        require(msg.sender == IOwnable(address(fuseMarginController)).owner(), "FuseMarginV1: Not owner of controller");
         _;
     }
 

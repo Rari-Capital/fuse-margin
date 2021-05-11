@@ -98,6 +98,20 @@ describe("FuseMarginV1", () => {
     expect(getPositionImplementation).to.equal(position.address);
   });
 
+  it("should revert if not controller owner", async () => {
+    await expect(fuseMarginV1.connect(attacker).proxyCall(ethers.constants.AddressZero, "0x")).to.be.revertedWith(
+      "FuseMarginV1: Not owner of controller",
+    );
+    await expect(
+      fuseMarginV1.connect(attacker).transferETH(ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("FuseMarginV1: Not owner of controller");
+    await expect(
+      fuseMarginV1
+        .connect(attacker)
+        .transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("FuseMarginV1: Not owner of controller");
+  });
+
   it("should open and close position", async () => {
     await network.provider.request({
       method: "hardhat_impersonateAccount",

@@ -8,7 +8,6 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
-import { Adapter } from "./FuseMarginV1/Adapter.sol";
 import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
 import { FuseMarginBase } from "./FuseMarginV1/FuseMarginBase.sol";
 import { IPosition } from "./interfaces/IPosition.sol";
@@ -31,7 +30,7 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         address _fuseMarginController,
         address _positionImplementation,
         address _uniswapFactory
-    ) Adapter(_uniswapFactory) FuseMarginBase(_fuseMarginController) {
+    ) Uniswap(_uniswapFactory) FuseMarginBase(_fuseMarginController) {
         fuseMarginERC721 = IERC721(_fuseMarginController);
         positionImplementation = _positionImplementation;
     }
