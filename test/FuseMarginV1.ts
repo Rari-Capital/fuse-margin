@@ -112,6 +112,28 @@ describe("FuseMarginV1", () => {
     ).to.be.revertedWith("FuseMarginV1: Not owner of controller");
   });
 
+  it("should revert if not uniswap pair", async () => {
+    const data: string = ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "address", "address", "address", "address", "address", "bytes", "bytes"],
+      [
+        BigNumber.from(0),
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        wbtcAddress,
+        daiAddress,
+        wethAddress,
+        "0x",
+        "0x",
+      ],
+    );
+    await expect(
+      fuseMarginV1.connect(attacker).uniswapV2Call(owner.address, BigNumber.from(0), BigNumber.from(0), data),
+    ).to.be.revertedWith("Uniswap: Only this contract may initiate");
+    await expect(
+      fuseMarginV1.connect(attacker).uniswapV2Call(fuseMarginV1.address, BigNumber.from(0), BigNumber.from(0), data),
+    ).to.be.revertedWith("Uniswap: only permissioned UniswapV2 pair can call");
+  });
+
   it("should open and close position", async () => {
     await network.provider.request({
       method: "hardhat_impersonateAccount",
