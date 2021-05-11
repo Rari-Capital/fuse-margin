@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.6;
+pragma experimental ABIEncoderV2;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import { IFuseMarginController } from "../interfaces/IFuseMarginController.sol";
@@ -40,6 +41,25 @@ abstract contract PositionBase is IPosition, Initializable {
     {
         (bool success, bytes memory result) = target.call{ value: msg.value }(callData);
         return (success, result);
+    }
+
+    /// @dev Allows for batched generalized calls through this position
+    /// @param targets Contract addresses to call
+    /// @param callDatas ABI encoded function/params
+    /// @return Whether calls were successful
+    /// @return Return bytes
+    function proxyMulticall(address[] calldata targets, bytes[] calldata callDatas)
+        external
+        override
+        onlyMargin
+        returns (bool[] memory, bytes[] memory)
+    {
+        bool[] memory successes = new bool[](targets.length);
+        bytes[] memory results = new bytes[](targets.length);
+        for (uint256 i = 0; i < targets.length; i++) {
+            (successes[i], results[i]) = targets[i].call(callDatas[i]);
+        }
+        return (successes, results);
     }
 
     /// @dev Transfer ETH balance

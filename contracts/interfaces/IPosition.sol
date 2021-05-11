@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0;
+pragma experimental ABIEncoderV2;
 
 import { IFuseMarginController } from "./IFuseMarginController.sol";
 
@@ -19,6 +20,15 @@ interface IPosition {
     /// @return Whether call was successful
     /// @return Return bytes
     function proxyCall(address target, bytes calldata callData) external payable returns (bool, bytes memory);
+
+    /// @dev Allows for batched generalized calls through this position
+    /// @param targets Contract addresses to call
+    /// @param callDatas ABI encoded function/params
+    /// @return Whether calls were successful
+    /// @return Return bytes
+    function proxyMulticall(address[] calldata targets, bytes[] calldata callDatas)
+        external
+        returns (bool[] memory, bytes[] memory);
 
     /// @dev Transfer ETH balance
     /// @param to Address to send to

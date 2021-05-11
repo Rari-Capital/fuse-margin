@@ -94,8 +94,6 @@ describe("FuseMarginV1", () => {
     expect(getUniswapFactory).to.equal(uniswapFactoryAddress);
     const getFuseMarginController1: string = await fuseMarginV1.fuseMarginController();
     expect(getFuseMarginController1).to.equal(fuseMarginController.address);
-    // const getFuseMarginERC721: string = await fuseMarginV1.fuseMarginERC721();
-    // expect(getFuseMarginERC721).to.equal(fuseMarginController.address);
     const getPositionImplementation: string = await fuseMarginV1.positionImplementation();
     expect(getPositionImplementation).to.equal(position.address);
   });

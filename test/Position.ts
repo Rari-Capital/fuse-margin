@@ -126,12 +126,18 @@ describe("Position", () => {
     await expect(position.proxyCall(ethers.constants.AddressZero, "0x")).to.be.revertedWith(
       "Position: Not approved contract",
     );
-    await expect(
-      position.transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
-    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(position.proxyMulticall([ethers.constants.AddressZero], ["0x"])).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
     await expect(position.transferETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
       "Position: Not approved contract",
     );
+    await expect(
+      position.approveToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
+    await expect(
+      position.transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Position: Not approved contract");
     await expect(
       position.mint(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
@@ -244,6 +250,35 @@ describe("Position", () => {
     expect(wethBalance3).to.equal(BigNumber.from(0));
     const ethBalance3 = await ethers.provider.getBalance(position.address);
     expect(ethBalance3).to.equal(wethDepositAmount);
+  });
+
+  it("should perform proxy multi call", async () => {
+    const wethBalance0 = await WETH9.balanceOf(position.address);
+    expect(wethBalance0).to.equal(BigNumber.from(0));
+    const wethDepositCall: string = WETH9.interface.encodeFunctionData("deposit");
+    const wethDepositAmount = ethers.utils.parseEther("1");
+    await position.connect(attacker).proxyCall(WETH9.address, wethDepositCall, { value: wethDepositAmount });
+    const wethBalance1 = await WETH9.balanceOf(position.address);
+    expect(wethBalance1).to.equal(wethDepositAmount);
+
+    const wethTransferAmount = wethDepositAmount.div(2);
+    const wethTransferCall: string = WETH9.interface.encodeFunctionData("transfer", [
+      owner.address,
+      wethTransferAmount,
+    ]);
+    const wethWithdrawCall: string = WETH9.interface.encodeFunctionData("withdraw", [wethTransferAmount]);
+    const ownerBalance2 = await WETH9.balanceOf(owner.address);
+    const ethBalance2 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance2).to.equal(BigNumber.from(0));
+    await position
+      .connect(attacker)
+      .proxyMulticall([WETH9.address, WETH9.address], [wethTransferCall, wethWithdrawCall]);
+    const ownerBalance3 = await WETH9.balanceOf(owner.address);
+    expect(ownerBalance2.add(wethTransferAmount)).to.equal(ownerBalance3);
+    const wethBalance3 = await WETH9.balanceOf(position.address);
+    expect(wethBalance3).to.equal(BigNumber.from(0));
+    const ethBalance3 = await ethers.provider.getBalance(position.address);
+    expect(ethBalance3).to.equal(wethTransferAmount);
   });
 
   it("should approve tokens", async () => {
