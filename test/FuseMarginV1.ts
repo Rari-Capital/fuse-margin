@@ -11,6 +11,7 @@ import {
   Position__factory,
   CErc20Interface,
   IUniswapV2Pair,
+  IWETH9,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
 import {
@@ -33,6 +34,7 @@ describe("FuseMarginV1", () => {
   let fuseMarginController: FuseMarginController;
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
+  let WETH9: IWETH9;
 
   const wbtcProvidedAmount: BigNumber = BigNumber.from("50000000");
   const daiBorrowAmount: BigNumber = BigNumber.from("3000000000000000000000");
@@ -67,6 +69,8 @@ describe("FuseMarginV1", () => {
       uniswapFactoryAddress,
     );
     await fuseMarginController.addMarginContract(fuseMarginV1.address);
+
+    WETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
   });
 
   it("constructor should initialize state variables", async () => {
@@ -126,6 +130,25 @@ describe("FuseMarginV1", () => {
     await expect(
       fuseMarginV1.connect(attacker).uniswapV2Call(fuseMarginV1.address, BigNumber.from(0), BigNumber.from(0), data),
     ).to.be.revertedWith("Uniswap: only permissioned UniswapV2 pair can call");
+  });
+
+  it("should perform proxy call", async () => {
+    const wethBalance0 = await WETH9.balanceOf(fuseMarginV1.address);
+    expect(wethBalance0).to.equal(BigNumber.from(0));
+    const wethDepositCall: string = WETH9.interface.encodeFunctionData("deposit");
+    const wethDepositAmount = ethers.utils.parseEther("1");
+    await fuseMarginV1.proxyCall(WETH9.address, wethDepositCall, { value: wethDepositAmount });
+    const wethBalance1 = await WETH9.balanceOf(fuseMarginV1.address);
+    expect(wethBalance1).to.equal(wethDepositAmount);
+
+    const wethWithdrawCall: string = WETH9.interface.encodeFunctionData("withdraw", [wethDepositAmount]);
+    const ethBalance2 = await ethers.provider.getBalance(fuseMarginV1.address);
+    expect(ethBalance2).to.equal(BigNumber.from(0));
+    await fuseMarginV1.proxyCall(WETH9.address, wethWithdrawCall);
+    const wethBalance3 = await WETH9.balanceOf(fuseMarginV1.address);
+    expect(wethBalance3).to.equal(BigNumber.from(0));
+    const ethBalance3 = await ethers.provider.getBalance(fuseMarginV1.address);
+    expect(ethBalance3).to.equal(wethDepositAmount);
   });
 
   it("should open position", async () => {
