@@ -91,18 +91,9 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         bytes calldata fusePool,
         bytes calldata exchangeData
     ) external override isOwner(tokenId) {
+        address positionAddress = fuseMarginController.positions(tokenId);
         fuseMarginController.closePosition(tokenId);
-        bytes memory data =
-            abi.encode(
-                1,
-                msg.sender,
-                fuseMarginController.positions(tokenId),
-                base,
-                quote,
-                pairToken,
-                fusePool,
-                exchangeData
-            );
+        bytes memory data = abi.encode(1, msg.sender, positionAddress, base, quote, pairToken, fusePool, exchangeData);
         pair.swap(amount0Out, amount1Out, address(this), data);
     }
 
