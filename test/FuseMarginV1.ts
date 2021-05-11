@@ -70,12 +70,6 @@ describe("FuseMarginV1", () => {
   });
 
   it("constructor should initialize state variables", async () => {
-    const getName: string = await fuseMarginController.name();
-    expect(getName).to.equal(fuseMarginControllerName);
-    const getSymbol: string = await fuseMarginController.symbol();
-    expect(getSymbol).to.equal(fuseMarginControllerSymbol);
-    const getOwner: string = await fuseMarginController.owner();
-    expect(getOwner).to.equal(owner.address);
     const getMarginContracts: string = await fuseMarginController.marginContracts(BigNumber.from(0));
     expect(getMarginContracts).to.equal(fuseMarginV1.address);
     const getGetMarginContracts: string[] = await fuseMarginController.getMarginContracts();

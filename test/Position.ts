@@ -97,23 +97,12 @@ describe("Position", () => {
   });
 
   it("should initialize", async () => {
-    const getName: string = await fuseMarginController.name();
-    expect(getName).to.equal(fuseMarginControllerName);
-    const getSymbol: string = await fuseMarginController.symbol();
-    expect(getSymbol).to.equal(fuseMarginControllerSymbol);
-    const getOwner: string = await fuseMarginController.owner();
-    expect(getOwner).to.equal(owner.address);
     const getMarginContracts: string = await fuseMarginController.marginContracts(BigNumber.from(0));
     expect(getMarginContracts).to.equal(attacker.address);
     const getGetMarginContracts: string[] = await fuseMarginController.getMarginContracts();
     expect(getGetMarginContracts).to.deep.equal([attacker.address]);
     const getApprovedContracts: boolean = await fuseMarginController.approvedContracts(attacker.address);
     expect(getApprovedContracts).to.equal(true);
-    const [getTokensOfOwner, getPositionsOfOwner]: [BigNumber[], string[]] = await fuseMarginController.tokensOfOwner(
-      owner.address,
-    );
-    expect(getTokensOfOwner).to.deep.equal([]);
-    expect(getPositionsOfOwner).to.deep.equal([]);
 
     const getFuseMarginController0: string = await position.fuseMarginController();
     expect(getFuseMarginController0).to.equal(fuseMarginController.address);

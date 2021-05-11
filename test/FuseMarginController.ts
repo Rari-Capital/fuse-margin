@@ -69,12 +69,8 @@ describe("FuseMarginController", () => {
 
     const fuseMarginController0: string = await position.fuseMarginController();
     expect(fuseMarginController0).to.equal(fuseMarginController.address);
-    const getUniswapFactory: string = await fuseMarginV1.uniswapFactory();
-    expect(getUniswapFactory).to.equal(uniswapFactoryAddress);
     const getFuseMarginController1: string = await fuseMarginV1.fuseMarginController();
     expect(getFuseMarginController1).to.equal(fuseMarginController.address);
-    const getPositionImplementation: string = await fuseMarginV1.positionImplementation();
-    expect(getPositionImplementation).to.equal(position.address);
   });
 
   it("should revert if not owner", async () => {
