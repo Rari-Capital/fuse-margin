@@ -183,11 +183,12 @@ describe("FuseMarginV1", () => {
     await DAI.connect(impersonateAddressSigner).transfer(fuseMarginV1.address, ethDepositAmount);
     const daiBalance4 = await DAI.balanceOf(fuseMarginV1.address);
     expect(daiBalance4).to.equal(ethDepositAmount);
+    const ownerBalance4 = await DAI.balanceOf(owner.address);
     await fuseMarginV1.transferToken(DAI.address, owner.address, ethDepositAmount);
     const daiBalance5 = await DAI.balanceOf(fuseMarginV1.address);
     expect(daiBalance5).to.equal(BigNumber.from(0));
     const ownerBalance5 = await DAI.balanceOf(owner.address);
-    expect(ownerBalance5).to.equal(ethDepositAmount);
+    expect(ownerBalance5.sub(ownerBalance4)).to.equal(ethDepositAmount);
   });
 
   it("should open position", async () => {

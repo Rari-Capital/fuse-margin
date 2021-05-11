@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 import {
@@ -8,9 +8,10 @@ import {
   FuseMarginController__factory,
   FuseMarginV1__factory,
   Position__factory,
+  ERC20,
 } from "../typechain";
 import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
-import { uniswapFactoryAddress } from "../scripts/constants/addresses";
+import { uniswapFactoryAddress, impersonateAddress, daiAddress } from "../scripts/constants/addresses";
 
 describe("FuseMarginController", () => {
   let accounts: Signer[];
@@ -20,6 +21,8 @@ describe("FuseMarginController", () => {
   let fuseMarginV1Factory: FuseMarginV1__factory;
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
+  let impersonateAddressSigner: Signer;
+  let DAI: ERC20;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
@@ -50,6 +53,10 @@ describe("FuseMarginController", () => {
       position.address,
       uniswapFactoryAddress,
     );
+
+    DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", daiAddress)) as ERC20;
+
+    impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
   });
 
   it("constructor should initialize state variables", async () => {
@@ -80,6 +87,11 @@ describe("FuseMarginController", () => {
     await expect(fuseMarginController.connect(attacker).removeMarginContract(fuseMarginV1.address)).to.be.revertedWith(
       "Ownable: caller is not the owner",
     );
+    await expect(
+      fuseMarginController
+        .connect(attacker)
+        .transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+    ).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
   it("should revert if not margin contract", async () => {
@@ -89,6 +101,29 @@ describe("FuseMarginController", () => {
     await expect(fuseMarginController.connect(attacker).closePosition(BigNumber.from(0))).to.be.revertedWith(
       "FuseMarginController: Not approved contract",
     );
+  });
+
+  it("should transfer tokens", async () => {
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [impersonateAddress],
+    });
+    const ethDepositAmount = ethers.utils.parseEther("1");
+    const daiBalance3 = await DAI.balanceOf(fuseMarginController.address);
+    expect(daiBalance3).to.equal(BigNumber.from(0));
+    await DAI.connect(impersonateAddressSigner).transfer(fuseMarginController.address, ethDepositAmount);
+    const daiBalance4 = await DAI.balanceOf(fuseMarginController.address);
+    expect(daiBalance4).to.equal(ethDepositAmount);
+    const ownerBalance4 = await DAI.balanceOf(owner.address);
+    await fuseMarginController.transferToken(DAI.address, owner.address, ethDepositAmount);
+    const daiBalance5 = await DAI.balanceOf(fuseMarginController.address);
+    expect(daiBalance5).to.equal(BigNumber.from(0));
+    const ownerBalance5 = await DAI.balanceOf(owner.address);
+    expect(ownerBalance5.sub(ownerBalance4)).to.equal(ethDepositAmount);
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [impersonateAddress],
+    });
   });
 
   it("should add margin contracts", async () => {

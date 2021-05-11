@@ -2,6 +2,7 @@
 pragma solidity ^0.8.3;
 
 import { ERC721 } from "openzeppelin-contracts-4/token/ERC721/ERC721.sol";
+import { IERC20 } from "openzeppelin-contracts-4/token/ERC20/IERC20.sol";
 import { Ownable } from "openzeppelin-contracts-4/access/Ownable.sol";
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 
@@ -62,6 +63,18 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         approvedContracts[contractAddress] = false;
         marginContractsNum--;
         emit RemoveMarginContract(contractAddress, msg.sender);
+    }
+
+    /// @dev Transfers token balance
+    /// @param token Token address
+    /// @param to Transfer to address
+    /// @param amount Amount to transfer
+    function transferToken(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
+        IERC20(token).transfer(to, amount);
     }
 
     /// @dev Gets all approved margin contracts
