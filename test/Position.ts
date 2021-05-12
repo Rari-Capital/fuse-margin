@@ -135,16 +135,31 @@ describe("Position", () => {
       "Position: Not approved contract",
     );
     await expect(
-      position.borrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+      position.borrow(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+      ),
     ).to.be.revertedWith("Position: Not approved contract");
     await expect(
       position.repayBorrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
     await expect(
-      position.redeem(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+      position.redeem(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+      ),
     ).to.be.revertedWith("Position: Not approved contract");
     await expect(
-      position.redeemUnderlying(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
+      position.redeemUnderlying(
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        BigNumber.from(0),
+      ),
     ).to.be.revertedWith("Position: Not approved contract");
     await expect(
       position.mintAndBorrow(
@@ -300,7 +315,7 @@ describe("Position", () => {
     const fr4DAIBalance2 = await fr4DAI.borrowBalanceStored(position.address);
     expect(fr4DAIBalance2).to.equal(BigNumber.from(0));
     const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
-    await position.connect(attacker).borrow(DAI.address, fr4DAI.address, borrowAmountDAI);
+    await position.connect(attacker).borrow(DAI.address, fr4DAI.address, attacker.address, borrowAmountDAI);
     const daiBalance3 = await DAI.balanceOf(attacker.address);
     expect(daiBalance3).to.equal(borrowAmountDAI);
     const fr4DAIBalance3 = await fr4DAI.borrowBalanceStored(position.address);
@@ -313,7 +328,7 @@ describe("Position", () => {
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
     await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
     const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
-    await position.connect(attacker).borrow(DAI.address, fr4DAI.address, borrowAmountDAI);
+    await position.connect(attacker).borrow(DAI.address, fr4DAI.address, attacker.address, borrowAmountDAI);
 
     const daiBalance2 = await DAI.balanceOf(position.address);
     expect(daiBalance2).to.equal(BigNumber.from(0));
@@ -339,7 +354,7 @@ describe("Position", () => {
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
     const fr4USDCTokenBalance1 = await fr4USDCToken.balanceOf(position.address);
     expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
-    await position.connect(attacker).redeem(USDC.address, fr4USDC.address, fr4USDCTokenBalance1);
+    await position.connect(attacker).redeem(USDC.address, fr4USDC.address, attacker.address, fr4USDCTokenBalance1);
     const fr4USDCTokenBalance2 = await fr4USDCToken.balanceOf(position.address);
     expect(fr4USDCTokenBalance2).to.equal(BigNumber.from(0));
     const USDCBalance2 = await USDC.balanceOf(attacker.address);
@@ -354,7 +369,9 @@ describe("Position", () => {
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
     const fr4USDCTokenBalance1 = await fr4USDC.balanceOfUnderlying(position.address);
     expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
-    await position.connect(attacker).redeemUnderlying(USDC.address, fr4USDC.address, fr4USDCTokenBalance1);
+    await position
+      .connect(attacker)
+      .redeemUnderlying(USDC.address, fr4USDC.address, attacker.address, fr4USDCTokenBalance1);
     const fr4USDCTokenBalance2 = await fr4USDC.balanceOfUnderlying(position.address);
     expect(fr4USDCTokenBalance2).to.be.lt(fr4USDCTokenBalance1);
     const USDCBalance2 = await USDC.balanceOf(attacker.address);

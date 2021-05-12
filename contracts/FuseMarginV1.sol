@@ -106,8 +106,7 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         uint256 tokenId,
         uint256 redeemAmount
     ) external override isOwner(tokenId) {
-        IPosition(fuseMarginController.positions(tokenId)).redeemUnderlying(base, cBase, redeemAmount);
-        IERC20(base).safeTransfer(msg.sender, redeemAmount);
+        IPosition(fuseMarginController.positions(tokenId)).redeemUnderlying(base, cBase, msg.sender, redeemAmount);
     }
 
     /// @dev Closes an existing position, caller must own tokenId

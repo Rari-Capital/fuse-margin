@@ -88,10 +88,12 @@ interface IPosition {
     /// @dev Borrow a token, must have first called enterMarkets for the base collateral
     /// @param quote Token to borrow
     /// @param cQuote Equivalent cToken
+    /// @param transferTo Address to transfer borrowed tokens to
     /// @param borrowAmount Amount to borrow
     function borrow(
         address quote,
         address cQuote,
+        address transferTo,
         uint256 borrowAmount
     ) external;
 
@@ -108,20 +110,24 @@ interface IPosition {
     /// @dev Withdraw token from pool, given cToken amount
     /// @param base Token to withdraw
     /// @param cBase Equivalent cToken
+    /// @param transferTo Address to transfer borrowed tokens to
     /// @param redeemTokens Amount of cToken to withdraw
     function redeem(
         address base,
         address cBase,
+        address transferTo,
         uint256 redeemTokens
     ) external;
 
     /// @dev Withdraw token from pool, given token amount
     /// @param base Token to withdraw
     /// @param cBase Equivalent cToken
+    /// @param transferTo Address to transfer borrowed tokens to
     /// @param redeemAmount Amount of token to withdraw
     function redeemUnderlying(
         address base,
         address cBase,
+        address transferTo,
         uint256 redeemAmount
     ) external;
 

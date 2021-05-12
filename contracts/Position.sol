@@ -70,14 +70,16 @@ contract Position is PositionBase {
     /// @dev Borrow a token, must have first called enterMarkets for the base collateral
     /// @param quote Token to borrow
     /// @param cQuote Equivalent cToken
+    /// @param transferTo Address to transfer borrowed tokens to
     /// @param borrowAmount Amount to borrow
     function borrow(
         address quote,
         address cQuote,
+        address transferTo,
         uint256 borrowAmount
     ) external override onlyMargin {
         require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in borrow failed");
-        IERC20(quote).safeTransfer(msg.sender, borrowAmount);
+        IERC20(quote).safeTransfer(transferTo, borrowAmount);
     }
 
     /// @dev Repay borrowed token, must have transferred the token to this contract before calling
@@ -96,30 +98,34 @@ contract Position is PositionBase {
     /// @dev Withdraw token from pool, given cToken amount
     /// @param base Token to withdraw
     /// @param cBase Equivalent cToken
+    /// @param transferTo Address to transfer borrowed tokens to
     /// @param redeemTokens Amount of cToken to withdraw
     function redeem(
         address base,
         address cBase,
+        address transferTo,
         uint256 redeemTokens
     ) external override onlyMargin {
         require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeem failed");
-        IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
+        IERC20(base).safeTransfer(transferTo, IERC20(base).balanceOf(address(this)));
     }
 
     /// @dev Withdraw token from pool, given token amount
     /// @param base Token to withdraw
     /// @param cBase Equivalent cToken
+    /// @param transferTo Address to transfer borrowed tokens to
     /// @param redeemAmount Amount of token to withdraw
     function redeemUnderlying(
         address base,
         address cBase,
+        address transferTo,
         uint256 redeemAmount
     ) external override onlyMargin {
         require(
             CErc20Interface(cBase).redeemUnderlying(redeemAmount) == 0,
             "Position: redeemUnderlying in redeemUnderlying failed"
         );
-        IERC20(base).safeTransfer(msg.sender, redeemAmount);
+        IERC20(base).safeTransfer(transferTo, redeemAmount);
     }
 
     /// @dev Deposits a token, enables it as collateral and borrows a token,
