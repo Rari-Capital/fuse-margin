@@ -292,6 +292,7 @@ describe("FuseMarginV1", () => {
     expect(getfr4DAIBalance1).to.be.gt(daiBorrowAmount);
     const wbtcBalance1 = await WBTC.balanceOf(impersonateAddress);
     expect(wbtcBalance1).to.equal(wbtcBalance0.sub(wbtcProvidedAmount));
+    const daiBalance1 = await DAI.balanceOf(impersonateAddress);
 
     const quoteData1: string =
       "0xd9627aa40000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000051829e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000b998aed513607d1520";
@@ -321,17 +322,23 @@ describe("FuseMarginV1", () => {
     )
       .to.emit(fuseMarginController, "Transfer")
       .withArgs(impersonateAddress, ethers.constants.AddressZero, BigNumber.from(0));
-    console.log(
-      ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(getPositions1), 8),
-      (await fr4WBTC.balanceOfUnderlying(getPositions1)).toString(),
+    const getPositions2 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions2).to.equal(getPositions1);
+    const getBalanceOf2 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf2).to.equal(BigNumber.from(0));
+    await expect(fuseMarginController.ownerOf(BigNumber.from(0))).to.be.revertedWith(
+      "ERC721: owner query for nonexistent token",
     );
-    console.log(
-      ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(getPositions1), 18),
-      (await fr4DAI.borrowBalanceStored(getPositions1)).toString(),
-    );
-    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
-    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
+    const [getTokenIdsOfOwner2, getPositionsOfOwner2] = await fuseMarginController.tokensOfOwner(impersonateAddress);
+    expect(getTokenIdsOfOwner2).to.deep.equal([]);
+    expect(getPositionsOfOwner2).to.deep.equal([]);
+    const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    expect(getfr4WBTCBalance2).to.equal(BigNumber.from(0));
+    const getfr4DAIBalance2 = await fr4DAI.borrowBalanceStored(getPositions1);
+    expect(getfr4DAIBalance2).to.equal(BigNumber.from(0));
+    const wbtcBalance2 = await WBTC.balanceOf(impersonateAddress);
+    expect(wbtcBalance2).to.be.gt(wbtcBalance1);
+    const daiBalance2 = await DAI.balanceOf(impersonateAddress);
+    expect(daiBalance2).to.be.gte(daiBalance1);
   });
-
-  // Should close position
 });
