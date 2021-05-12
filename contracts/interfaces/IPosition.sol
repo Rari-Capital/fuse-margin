@@ -30,6 +30,13 @@ interface IPosition {
         external
         returns (bool[] memory, bytes[] memory);
 
+    /// @dev Delegate call
+    /// @param target Contract address to delegatecall
+    /// @param callData ABI encoded function/params
+    /// @return Whether call was successful
+    /// @return Return bytes
+    function delegatecall(address target, bytes calldata callData) external payable returns (bool, bytes memory);
+
     /// @dev Transfer ETH balance
     /// @param to Address to send to
     /// @param amount Amount of ETH to send

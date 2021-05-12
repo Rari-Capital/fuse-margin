@@ -118,6 +118,9 @@ describe("Position", () => {
     await expect(position.proxyMulticall([ethers.constants.AddressZero], ["0x"])).to.be.revertedWith(
       "Position: Not approved contract",
     );
+    await expect(position.delegatecall(ethers.constants.AddressZero, "0x")).to.be.revertedWith(
+      "Position: Not approved contract",
+    );
     await expect(position.transferETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
       "Position: Not approved contract",
     );

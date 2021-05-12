@@ -62,6 +62,22 @@ abstract contract PositionBase is IPosition, Initializable {
         return (successes, results);
     }
 
+    /// @dev Delegate call
+    /// @param target Contract address to delegatecall
+    /// @param callData ABI encoded function/params
+    /// @return Whether call was successful
+    /// @return Return bytes
+    function delegatecall(address target, bytes calldata callData)
+        external
+        payable
+        override
+        onlyMargin
+        returns (bool, bytes memory)
+    {
+        (bool success, bytes memory result) = target.delegatecall(callData);
+        return (success, result);
+    }
+
     /// @dev Transfer ETH balance
     /// @param to Address to send to
     /// @param amount Amount of ETH to send
