@@ -5,7 +5,6 @@ import {
   FuseMarginController,
   Position,
   FuseMarginController__factory,
-  CEtherInterface,
   Position__factory,
   IERC20,
   ERC20,
@@ -22,7 +21,6 @@ import {
   fusePool4,
   fr4USDCAddress,
   fr4DAIAddress,
-  fr4ETHAddress,
 } from "../scripts/constants/addresses";
 
 describe("Position", () => {
@@ -37,7 +35,6 @@ describe("Position", () => {
   let WETH9: IWETH9;
   let fr4DAI: CErc20Interface;
   let fr4USDC: CErc20Interface;
-  let fr4ETH: CEtherInterface;
   let FusePool4: ComptrollerInterface;
 
   beforeEach(async () => {
@@ -73,10 +70,6 @@ describe("Position", () => {
       "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
       fr4USDCAddress,
     )) as CErc20Interface;
-    fr4ETH = (await ethers.getContractAt(
-      "contracts/interfaces/CEtherInterface.sol:CEtherInterface",
-      fr4ETHAddress,
-    )) as CEtherInterface;
     FusePool4 = (await ethers.getContractAt(
       "contracts/interfaces/ComptrollerInterface.sol:ComptrollerInterface",
       fusePool4,
@@ -135,9 +128,6 @@ describe("Position", () => {
     await expect(
       position.mint(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
-    await expect(position.mintETH(ethers.constants.AddressZero, { value: BigNumber.from(0) })).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
     await expect(position.enterMarkets(ethers.constants.AddressZero, [])).to.be.revertedWith(
       "Position: Not approved contract",
     );
@@ -147,27 +137,15 @@ describe("Position", () => {
     await expect(
       position.borrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
-    await expect(position.borrowETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
     await expect(
       position.repayBorrow(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
-    await expect(position.repayBorrowETH(ethers.constants.AddressZero)).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
     await expect(
       position.redeem(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
-    await expect(position.redeemETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
     await expect(
       position.redeemUnderlying(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Position: Not approved contract");
-    await expect(position.redeemUnderlyingETH(ethers.constants.AddressZero, BigNumber.from(0))).to.be.revertedWith(
-      "Position: Not approved contract",
-    );
     await expect(
       position.mintAndBorrow(
         ethers.constants.AddressZero,
@@ -180,44 +158,8 @@ describe("Position", () => {
       ),
     ).to.be.revertedWith("Position: Not approved contract");
     await expect(
-      position.mintETHAndBorrow(
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        BigNumber.from(0),
-      ),
-    ).to.be.revertedWith("Position: Not approved contract");
-    await expect(
-      position.mintAndBorrowETH(
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        BigNumber.from(0),
-        BigNumber.from(0),
-      ),
-    ).to.be.revertedWith("Position: Not approved contract");
-    await expect(
       position.repayAndRedeem(
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        BigNumber.from(0),
-        BigNumber.from(0),
-      ),
-    ).to.be.revertedWith("Position: Not approved contract");
-    await expect(
-      position.repayETHAndRedeem(
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-        BigNumber.from(0),
-      ),
-    ).to.be.revertedWith("Position: Not approved contract");
-    await expect(
-      position.repayAndRedeemETH(
         ethers.constants.AddressZero,
         ethers.constants.AddressZero,
         ethers.constants.AddressZero,
@@ -308,7 +250,7 @@ describe("Position", () => {
     expect(ownerBalance5.sub(ownerBalance4)).to.equal(ethDepositAmount);
   });
 
-  it("should mint ERC20s and ETH", async () => {
+  it("should mint tokens", async () => {
     const fr4USDCToken: IERC20 = (await ethers.getContractAt(
       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
       fr4USDC.address,
@@ -328,21 +270,6 @@ describe("Position", () => {
     expect(fr4USDCTokenBalance1).to.be.gt(fr4USDCTokenBalance0);
     const usdcBalance1 = await USDC.balanceOf(position.address);
     expect(usdcBalance1).to.equal(BigNumber.from(0));
-
-    const fr4ETHToken: IERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-      fr4ETH.address,
-    )) as IERC20;
-    const fr4ETHBalance2 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHBalance2).to.equal(BigNumber.from(0));
-    const fr4ETHTokenBalance2 = await fr4ETHToken.balanceOf(position.address);
-    expect(fr4ETHTokenBalance2).to.equal(BigNumber.from(0));
-    const mintAmountETH = ethers.utils.parseEther("10");
-    await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
-    const fr4ETHBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHBalance3).to.gt(fr4ETHBalance2);
-    const fr4ETHTokenBalance3 = await fr4ETHToken.balanceOf(position.address);
-    expect(fr4ETHTokenBalance3).to.gt(fr4ETHTokenBalance2);
   });
 
   it("should enter markets", async () => {
@@ -362,7 +289,7 @@ describe("Position", () => {
     expect(comptrollerMarkets3).to.deep.equal([fr4USDC.address]);
   });
 
-  it("should borrow ERC20s and ETH", async () => {
+  it("should borrow tokens", async () => {
     const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
@@ -378,19 +305,9 @@ describe("Position", () => {
     expect(daiBalance3).to.equal(borrowAmountDAI);
     const fr4DAIBalance3 = await fr4DAI.borrowBalanceStored(position.address);
     expect(fr4DAIBalance3).to.equal(borrowAmountDAI);
-
-    const ethBalance4 = await ethers.provider.getBalance(attacker.address);
-    const frETHBalance4 = await fr4ETH.borrowBalanceStored(position.address);
-    expect(frETHBalance4).to.equal(BigNumber.from(0));
-    const borrowAmountETH = ethers.utils.parseEther("2");
-    await position.connect(attacker).borrowETH(fr4ETH.address, borrowAmountETH);
-    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
-    expect(ethBalance5).to.be.gt(ethBalance4);
-    const frETHBalance5 = await fr4ETH.borrowBalanceStored(position.address);
-    expect(frETHBalance5).to.equal(borrowAmountETH);
   });
 
-  it("should repay borrow ERC20s and ETH", async () => {
+  it("should repay borrow tokens", async () => {
     const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
     await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
     await position.connect(attacker).mint(USDC.address, fr4USDC.address, mintAmountUSDC);
@@ -408,17 +325,9 @@ describe("Position", () => {
     await position.connect(attacker).repayBorrow(DAI.address, fr4DAI.address, borrowAmountDAI);
     const fr4DAIBalance4 = await fr4DAI.borrowBalanceStored(position.address);
     expect(fr4DAIBalance4).to.be.lt(borrowAmountDAI);
-
-    const borrowAmountETH = ethers.utils.parseEther("2");
-    await position.connect(attacker).borrowETH(fr4ETH.address, borrowAmountETH);
-    const fr4ETHBalance5 = await fr4ETH.borrowBalanceStored(position.address);
-    expect(fr4ETHBalance5).to.be.gte(borrowAmountETH);
-    await position.connect(attacker).repayBorrowETH(fr4ETH.address, { value: borrowAmountETH });
-    const fr4ETHBalance6 = await fr4ETH.borrowBalanceStored(position.address);
-    expect(fr4ETHBalance6).to.be.lt(borrowAmountETH);
   });
 
-  it("should redeem ERC20s and ETH", async () => {
+  it("should redeem tokens", async () => {
     const fr4USDCToken: IERC20 = (await ethers.getContractAt(
       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
       fr4USDC.address,
@@ -435,26 +344,9 @@ describe("Position", () => {
     expect(fr4USDCTokenBalance2).to.equal(BigNumber.from(0));
     const USDCBalance2 = await USDC.balanceOf(attacker.address);
     expect(USDCBalance2).to.be.gte(mintAmountUSDC);
-
-    const fr4ETHToken: IERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-      fr4ETH.address,
-    )) as IERC20;
-    const fr4ETHTokenBalance3 = await fr4ETHToken.balanceOf(position.address);
-    expect(fr4ETHTokenBalance3).to.equal(BigNumber.from(0));
-    const mintAmountETH = ethers.utils.parseEther("10");
-    await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
-    const fr4ETHTokenBalance4 = await fr4ETHToken.balanceOf(position.address);
-    expect(fr4ETHTokenBalance4).to.gt(fr4ETHTokenBalance3);
-    const ethBalance4 = await ethers.provider.getBalance(attacker.address);
-    await position.connect(attacker).redeemETH(fr4ETH.address, fr4ETHTokenBalance4);
-    const fr4USDCTokenBalance5 = await fr4USDCToken.balanceOf(position.address);
-    expect(fr4USDCTokenBalance5).to.equal(BigNumber.from(0));
-    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
-    expect(ethBalance5).to.be.gt(ethBalance4);
   });
 
-  it("should redeem underlying of ERC20s and ETH", async () => {
+  it("should redeem underlying of tokens", async () => {
     const fr4USDCTokenBalance0 = await fr4USDC.balanceOfUnderlying(position.address);
     expect(fr4USDCTokenBalance0).to.equal(BigNumber.from(0));
     const mintAmountUSDC = ethers.utils.parseUnits("100000", await USDC.decimals());
@@ -467,19 +359,6 @@ describe("Position", () => {
     expect(fr4USDCTokenBalance2).to.be.lt(fr4USDCTokenBalance1);
     const USDCBalance2 = await USDC.balanceOf(attacker.address);
     expect(USDCBalance2).to.be.gte(fr4USDCTokenBalance1);
-
-    const fr4ETHTokenBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHTokenBalance3).to.equal(BigNumber.from(0));
-    const mintAmountETH = ethers.utils.parseEther("10");
-    await position.connect(attacker).mintETH(fr4ETH.address, { value: mintAmountETH });
-    const fr4ETHTokenBalance4 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHTokenBalance4).to.gt(fr4ETHTokenBalance3);
-    const ethBalance4 = await ethers.provider.getBalance(attacker.address);
-    await position.connect(attacker).redeemUnderlyingETH(fr4ETH.address, fr4ETHTokenBalance4);
-    const fr4ETHTokenBalance5 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHTokenBalance5).to.be.lt(fr4ETHTokenBalance4);
-    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
-    expect(ethBalance5).to.be.gt(ethBalance4);
   });
 
   it("should mint and borrow", async () => {
@@ -508,46 +387,6 @@ describe("Position", () => {
     expect(fr4DAIBalance1).to.equal(borrowAmountDAI);
     const DAIBalance1 = await DAI.balanceOf(attacker.address);
     expect(DAIBalance1).to.equal(DAIBalance0.add(borrowAmountDAI));
-
-    const fr4USDCTokenBalance2 = await fr4USDC.balanceOfUnderlying(position.address);
-    await USDC.connect(impersonateAddressSigner).transfer(position.address, mintAmountUSDC);
-    const fr4ETHBalance2 = await fr4ETH.borrowBalanceStored(position.address);
-    expect(fr4ETHBalance2).to.equal(BigNumber.from(0));
-    const ethBalance2 = await ethers.provider.getBalance(attacker.address);
-    const borrowAmountETH = ethers.utils.parseEther("2");
-    await position
-      .connect(attacker)
-      .mintAndBorrowETH(
-        FusePool4.address,
-        USDC.address,
-        fr4USDC.address,
-        fr4ETH.address,
-        mintAmountUSDC,
-        borrowAmountETH,
-      );
-    const fr4USDCTokenBalance3 = await fr4USDC.balanceOfUnderlying(position.address);
-    expect(fr4USDCTokenBalance3).to.be.gt(fr4USDCTokenBalance2);
-    const fr4ETHBalance3 = await fr4ETH.borrowBalanceStored(position.address);
-    expect(fr4ETHBalance3).to.equal(borrowAmountETH);
-    const ethBalance3 = await ethers.provider.getBalance(attacker.address);
-    expect(ethBalance3).to.be.gt(ethBalance2);
-
-    const fr4ETHTokenBalance3 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHTokenBalance3).to.equal(BigNumber.from(0));
-    const fr4DAIBalance3 = await fr4DAI.borrowBalanceStored(position.address);
-    const DAIBalance3 = await DAI.balanceOf(attacker.address);
-    const mintAmountETH = ethers.utils.parseEther("10");
-    await position
-      .connect(attacker)
-      .mintETHAndBorrow(FusePool4.address, fr4ETH.address, DAI.address, fr4DAI.address, borrowAmountDAI, {
-        value: mintAmountETH,
-      });
-    const fr4ETHTokenBalance4 = await fr4ETH.balanceOfUnderlying(position.address);
-    expect(fr4ETHTokenBalance4).to.be.gt(fr4ETHTokenBalance3);
-    const fr4DAIBalance4 = await fr4DAI.borrowBalanceStored(position.address);
-    expect(fr4DAIBalance4).to.be.gt(fr4DAIBalance3);
-    const DAIBalance4 = await DAI.balanceOf(attacker.address);
-    expect(DAIBalance4).to.equal(DAIBalance3.add(borrowAmountDAI));
   });
 
   it("should repay and redeem", async () => {
@@ -583,49 +422,5 @@ describe("Position", () => {
     expect(daiBalance2).to.gt(daiBalance1);
     const frUSDCBalance2 = await fr4USDC.borrowBalanceStored(position.address);
     expect(frUSDCBalance2).to.be.lt(frUSDCBalance1);
-
-    await DAI.connect(impersonateAddressSigner).transfer(position.address, mintAmountDAI);
-    const borrowAmountETH = ethers.utils.parseEther("2");
-    await position
-      .connect(attacker)
-      .mintAndBorrowETH(FusePool4.address, DAI.address, fr4DAI.address, fr4ETH.address, mintAmountDAI, borrowAmountETH);
-    const frDAIBalance3 = await frDAIToken.balanceOf(position.address);
-    const redeemAmount3 = frDAIBalance3.div(2);
-    const daiBalance3 = await DAI.balanceOf(attacker.address);
-    const frETHBalance3 = await fr4ETH.borrowBalanceStored(position.address);
-    await position
-      .connect(attacker)
-      .repayETHAndRedeem(DAI.address, fr4DAI.address, fr4ETH.address, redeemAmount3, { value: frETHBalance3 });
-    const frDAIBalance4 = await frDAIToken.balanceOf(position.address);
-    expect(frDAIBalance4).to.be.lt(frDAIBalance3);
-    const daiBalance4 = await DAI.balanceOf(attacker.address);
-    expect(daiBalance4).to.gt(daiBalance3);
-    const frETHBalance4 = await fr4USDC.borrowBalanceStored(position.address);
-    expect(frETHBalance4).to.be.lt(frETHBalance3);
-
-    const frETHToken: IERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-      fr4ETH.address,
-    )) as IERC20;
-    const mintAmountETH = ethers.utils.parseEther("10");
-    await position
-      .connect(attacker)
-      .mintETHAndBorrow(FusePool4.address, fr4ETH.address, USDC.address, fr4USDC.address, borrowAmountUSDC, {
-        value: mintAmountETH,
-      });
-    const frETHBalance5 = await frETHToken.balanceOf(position.address);
-    const redeemAmount5 = frETHBalance5.div(2);
-    const ethBalance5 = await ethers.provider.getBalance(attacker.address);
-    const frUSDCBalance5 = await fr4USDC.borrowBalanceStored(position.address);
-    await USDC.connect(impersonateAddressSigner).transfer(position.address, frUSDCBalance5);
-    await position
-      .connect(attacker)
-      .repayAndRedeemETH(fr4ETH.address, USDC.address, fr4USDC.address, redeemAmount5, frUSDCBalance5);
-    const frETHBalance6 = await frETHToken.balanceOf(position.address);
-    expect(frETHBalance6).to.be.lt(frETHBalance5);
-    const ethBalance6 = await ethers.provider.getBalance(attacker.address);
-    expect(ethBalance6).to.be.gt(ethBalance5);
-    const frUSDCBalance6 = await fr4USDC.borrowBalanceStored(position.address);
-    expect(frUSDCBalance6).to.be.lt(frUSDCBalance5);
   });
 });
