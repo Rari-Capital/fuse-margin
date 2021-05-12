@@ -35,9 +35,12 @@ describe("FuseMarginV1", () => {
   let position: Position;
   let fuseMarginV1: FuseMarginV1;
   let impersonateAddressSigner: Signer;
-  let WETH9: IWETH9;
   let DAI: ERC20;
-
+  let WBTC: ERC20;
+  let WETH: ERC20;
+  let uniswapPairDAI: IUniswapV2Pair;
+  let fr4WBTC: CErc20Interface;
+  let fr4DAI: CErc20Interface;
   const wbtcProvidedAmount: BigNumber = BigNumber.from("50000000");
   const daiBorrowAmount: BigNumber = BigNumber.from("3000000000000000000000");
 
@@ -72,8 +75,21 @@ describe("FuseMarginV1", () => {
     );
     await fuseMarginController.addMarginContract(fuseMarginV1.address);
 
-    WETH9 = (await ethers.getContractAt("contracts/interfaces/IWETH9.sol:IWETH9", wethAddress)) as IWETH9;
     DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", daiAddress)) as ERC20;
+    WBTC = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", wbtcAddress)) as ERC20;
+    WETH = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", wethAddress)) as ERC20;
+    uniswapPairDAI = (await ethers.getContractAt(
+      "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol:IUniswapV2Pair",
+      daiUNIV2Address,
+    )) as IUniswapV2Pair;
+    fr4WBTC = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4WBTCAddress,
+    )) as CErc20Interface;
+    fr4DAI = (await ethers.getContractAt(
+      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
+      fr4DAIAddress,
+    )) as CErc20Interface;
 
     impersonateAddressSigner = await ethers.provider.getSigner(impersonateAddress);
     await network.provider.request({
@@ -170,125 +186,153 @@ describe("FuseMarginV1", () => {
   });
 
   it("should open position", async () => {
-    await network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [impersonateAddress],
-    });
-    const impersonateSigner: Signer = await ethers.provider.getSigner(impersonateAddress);
-    const quoteTo = "0xdef1c0ded9bec7f1a1670819833240f027b25eff";
+    const quoteTo: string = "0xdef1c0ded9bec7f1a1670819833240f027b25eff";
     // why the USDC/DAI Uniswap pair doesnt work: 0x itself routes through there
-    const quoteData =
-      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
-    const exchangeData = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quoteTo, quoteData]);
     // https://api.0x.org/swap/v1/quote?sellToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&buyToken=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&sellAmount=3000000000000000000000&excludedSources=Uniswap_V2&slippagePercentage=1
-    const fusePool = ethers.utils.defaultAbiCoder.encode(
+    const quoteData: string =
+      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
+    const exchangeData: string = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quoteTo, quoteData]);
+    const fusePool: string = ethers.utils.defaultAbiCoder.encode(
       ["address", "address", "address"],
       [fusePool4, fr4WBTCAddress, fr4DAIAddress],
     );
-
-    const DAI: ERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
-      daiAddress,
-    )) as ERC20;
-
-    const WBTC: ERC20 = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
-      wbtcAddress,
-    )) as ERC20;
-    await WBTC.connect(impersonateSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
-
-    const uniswapPair = (await ethers.getContractAt(
-      "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol:IUniswapV2Pair",
-      daiUNIV2Address,
-    )) as IUniswapV2Pair;
-    let amount0Out = daiBorrowAmount;
-    let amount1Out = BigNumber.from(0);
-    let pairToken = await uniswapPair.token1();
+    let amount0Out: BigNumber = daiBorrowAmount;
+    let amount1Out: BigNumber = BigNumber.from(0);
+    let pairToken: string = await uniswapPairDAI.token1();
     if (daiAddress === pairToken) {
       amount0Out = BigNumber.from(0);
       amount1Out = daiBorrowAmount;
-      pairToken = await uniswapPair.token0();
+      pairToken = await uniswapPairDAI.token0();
     }
-
-    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
-    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
-
-    await fuseMarginV1
-      .connect(impersonateSigner)
-      .openPosition(
-        daiUNIV2Address,
-        wbtcAddress,
-        daiAddress,
-        wethAddress,
-        wbtcProvidedAmount,
-        amount0Out,
-        amount1Out,
-        fusePool,
-        exchangeData,
-      );
-
-    const fr4WBTC = (await ethers.getContractAt(
-      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
-      fr4WBTCAddress,
-    )) as CErc20Interface;
-    const fr4WBTCToken = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
-      fr4WBTCAddress,
-    )) as ERC20;
-    const fr4DAI = (await ethers.getContractAt(
-      "contracts/interfaces/CErc20Interface.sol:CErc20Interface",
-      fr4DAIAddress,
-    )) as CErc20Interface;
-    const fr4DAIToken = (await ethers.getContractAt(
-      "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
-      fr4DAIAddress,
-    )) as ERC20;
-    const tokens = await fuseMarginController.tokensOfOwner(impersonateAddress);
-    console.log(
-      ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
-      (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
-    );
-    console.log(
-      ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
-      (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
-    );
-    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
-    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
-
-    await fuseMarginV1
-      .connect(impersonateSigner)
-      .closePosition(
-        wbtcUNIV2Address,
-        wbtcAddress,
-        daiAddress,
-        wethAddress,
-        BigNumber.from(0),
-        BigNumber.from("5341854"),
-        amount1Out,
-        fusePool,
-        ethers.utils.defaultAbiCoder.encode(
-          ["address", "bytes"],
-          [
-            quoteTo,
-            "0xd9627aa40000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000051829e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000b998aed513607d1520",
-          ],
+    const wbtcBalance0 = await WBTC.balanceOf(impersonateAddress);
+    const getBalanceOf0 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf0).to.equal(BigNumber.from(0));
+    const [getTokenIdsOfOwner0, getPositionsOfOwner0] = await fuseMarginController.tokensOfOwner(impersonateAddress);
+    expect(getTokenIdsOfOwner0).to.deep.equal([]);
+    expect(getPositionsOfOwner0).to.deep.equal([]);
+    await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
+    await expect(
+      fuseMarginV1
+        .connect(impersonateAddressSigner)
+        .openPosition(
+          uniswapPairDAI.address,
+          WBTC.address,
+          DAI.address,
+          pairToken,
+          wbtcProvidedAmount,
+          amount0Out,
+          amount1Out,
+          fusePool,
+          exchangeData,
         ),
-      );
-    console.log(
-      ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
-      (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
-    );
-    console.log(
-      ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
-      (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
-    );
-    console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
-    console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
+    )
+      .to.emit(fuseMarginController, "Transfer")
+      .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
+    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions1).to.not.equal(ethers.constants.AddressZero);
+    const getBalanceOf1 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf1).to.equal(BigNumber.from(1));
+    const getOwnerOf1 = await fuseMarginController.ownerOf(BigNumber.from(0));
+    expect(getOwnerOf1).to.equal(impersonateAddress);
+    const [getTokenIdsOfOwner1, getPositionsOfOwner1] = await fuseMarginController.tokensOfOwner(impersonateAddress);
+    expect(getTokenIdsOfOwner1).to.deep.equal([BigNumber.from(0)]);
+    expect(getPositionsOfOwner1).to.deep.equal([getPositions1]);
+    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    expect(getfr4WBTCBalance1).to.be.gt(wbtcProvidedAmount);
+    const getfr4DAIBalance1 = await fr4DAI.borrowBalanceStored(getPositions1);
+    expect(getfr4DAIBalance1).to.be.gt(daiBorrowAmount);
+    const wbtcBalance1 = await WBTC.balanceOf(impersonateAddress);
+    expect(wbtcBalance1).to.equal(wbtcBalance0.sub(wbtcProvidedAmount));
+  });
 
-    await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
-      params: [impersonateAddress],
-    });
+  it("should close position", async () => {
+    const quoteTo: string = "0xdef1c0ded9bec7f1a1670819833240f027b25eff";
+    // why the USDC/DAI Uniswap pair doesnt work: 0x itself routes through there
+    // https://api.0x.org/swap/v1/quote?sellToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&buyToken=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&sellAmount=3000000000000000000000&excludedSources=Uniswap_V2&slippagePercentage=1
+    const quoteData: string =
+      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
+    const exchangeData: string = ethers.utils.defaultAbiCoder.encode(["address", "bytes"], [quoteTo, quoteData]);
+    const fusePool: string = ethers.utils.defaultAbiCoder.encode(
+      ["address", "address", "address"],
+      [fusePool4, fr4WBTCAddress, fr4DAIAddress],
+    );
+    let amount0Out: BigNumber = daiBorrowAmount;
+    let amount1Out: BigNumber = BigNumber.from(0);
+    let pairToken: string = await uniswapPairDAI.token1();
+    if (daiAddress === pairToken) {
+      amount0Out = BigNumber.from(0);
+      amount1Out = daiBorrowAmount;
+      pairToken = await uniswapPairDAI.token0();
+    }
+    const wbtcBalance0 = await WBTC.balanceOf(impersonateAddress);
+    const getBalanceOf0 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf0).to.equal(BigNumber.from(0));
+    const [getTokenIdsOfOwner0, getPositionsOfOwner0] = await fuseMarginController.tokensOfOwner(impersonateAddress);
+    expect(getTokenIdsOfOwner0).to.deep.equal([]);
+    expect(getPositionsOfOwner0).to.deep.equal([]);
+    await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
+    await expect(
+      fuseMarginV1
+        .connect(impersonateAddressSigner)
+        .openPosition(
+          uniswapPairDAI.address,
+          WBTC.address,
+          DAI.address,
+          pairToken,
+          wbtcProvidedAmount,
+          amount0Out,
+          amount1Out,
+          fusePool,
+          exchangeData,
+        ),
+    )
+      .to.emit(fuseMarginController, "Transfer")
+      .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
+    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions1).to.not.equal(ethers.constants.AddressZero);
+    const getBalanceOf1 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf1).to.equal(BigNumber.from(1));
+    const getOwnerOf1 = await fuseMarginController.ownerOf(BigNumber.from(0));
+    expect(getOwnerOf1).to.equal(impersonateAddress);
+    const [getTokenIdsOfOwner1, getPositionsOfOwner1] = await fuseMarginController.tokensOfOwner(impersonateAddress);
+    expect(getTokenIdsOfOwner1).to.deep.equal([BigNumber.from(0)]);
+    expect(getPositionsOfOwner1).to.deep.equal([getPositions1]);
+    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    expect(getfr4WBTCBalance1).to.be.gt(wbtcProvidedAmount);
+    const getfr4DAIBalance1 = await fr4DAI.borrowBalanceStored(getPositions1);
+    expect(getfr4DAIBalance1).to.be.gt(daiBorrowAmount);
+    const wbtcBalance1 = await WBTC.balanceOf(impersonateAddress);
+    expect(wbtcBalance1).to.equal(wbtcBalance0.sub(wbtcProvidedAmount));
+
+    // await fuseMarginV1
+    //   .connect(impersonateAddressSigner)
+    //   .closePosition(
+    //     wbtcUNIV2Address,
+    //     wbtcAddress,
+    //     daiAddress,
+    //     wethAddress,
+    //     BigNumber.from(0),
+    //     BigNumber.from("5341854"),
+    //     amount1Out,
+    //     fusePool,
+    //     ethers.utils.defaultAbiCoder.encode(
+    //       ["address", "bytes"],
+    //       [
+    //         quoteTo,
+    //         "0xd9627aa40000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000051829e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000b998aed513607d1520",
+    //       ],
+    //     ),
+    //   );
+    // console.log(
+    //   ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(tokens[1][0]), 8),
+    //   (await fr4WBTC.balanceOfUnderlying(tokens[1][0])).toString(),
+    // );
+    // console.log(
+    //   ethers.utils.formatUnits(await fr4DAI.borrowBalanceStored(tokens[1][0]), 18),
+    //   (await fr4DAI.borrowBalanceStored(tokens[1][0])).toString(),
+    // );
+    // console.log("WBTC Balance:", (await WBTC.balanceOf(impersonateAddress)).toString());
+    // console.log("DAI Balance:", (await DAI.balanceOf(impersonateAddress)).toString());
   });
 
   // Should close position
