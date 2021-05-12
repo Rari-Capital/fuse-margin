@@ -263,6 +263,9 @@ describe("FuseMarginV1", () => {
       amount1Out0 = daiBorrowAmount;
       pairToken0 = await uniswapPairDAI.token0();
     }
+    const wbtcBalance0 = await WBTC.balanceOf(impersonateAddress);
+    const getBalanceOf0 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf0).to.equal(BigNumber.from(0));
     await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
     await fuseMarginV1
       .connect(impersonateAddressSigner)
@@ -278,6 +281,17 @@ describe("FuseMarginV1", () => {
         exchangeData0,
       );
     const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions1).to.not.equal(ethers.constants.AddressZero);
+    const getBalanceOf1 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf1).to.equal(BigNumber.from(1));
+    const getOwnerOf1 = await fuseMarginController.ownerOf(BigNumber.from(0));
+    expect(getOwnerOf1).to.equal(impersonateAddress);
+    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    expect(getfr4WBTCBalance1).to.be.gt(wbtcProvidedAmount);
+    const getfr4DAIBalance1 = await fr4DAI.borrowBalanceStored(getPositions1);
+    expect(getfr4DAIBalance1).to.be.gt(daiBorrowAmount);
+    const wbtcBalance1 = await WBTC.balanceOf(impersonateAddress);
+    expect(wbtcBalance1).to.equal(wbtcBalance0.sub(wbtcProvidedAmount));
 
     const quoteData1: string =
       "0xd9627aa40000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000051829e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000b998aed513607d1520";
@@ -290,19 +304,23 @@ describe("FuseMarginV1", () => {
       amount1Out1 = wbtcBorrowAmount;
       pairToken1 = await uniswapPairWBTC.token0();
     }
-    await fuseMarginV1
-      .connect(impersonateAddressSigner)
-      .closePosition(
-        uniswapPairWBTC.address,
-        WBTC.address,
-        DAI.address,
-        WETH.address,
-        BigNumber.from(0),
-        amount0Out1,
-        amount1Out1,
-        fusePool,
-        exchangeData1,
-      );
+    await expect(
+      fuseMarginV1
+        .connect(impersonateAddressSigner)
+        .closePosition(
+          uniswapPairWBTC.address,
+          WBTC.address,
+          DAI.address,
+          WETH.address,
+          BigNumber.from(0),
+          amount0Out1,
+          amount1Out1,
+          fusePool,
+          exchangeData1,
+        ),
+    )
+      .to.emit(fuseMarginController, "Transfer")
+      .withArgs(impersonateAddress, ethers.constants.AddressZero, BigNumber.from(0));
     console.log(
       ethers.utils.formatUnits(await fr4WBTC.balanceOfUnderlying(getPositions1), 8),
       (await fr4WBTC.balanceOfUnderlying(getPositions1)).toString(),
