@@ -12,6 +12,9 @@ abstract contract PositionBase is IPosition, Initializable {
     /// @dev Points to immutable FuseMarginController instance
     IFuseMarginController public override fuseMarginController;
 
+    /// @dev Version of position contract
+    uint256 public constant override version = 0;
+
     /// @dev Initializes the contract once after creation
     /// @param _fuseMarginController Address of FuseMarginController
     function initialize(IFuseMarginController _fuseMarginController) external override initializer {

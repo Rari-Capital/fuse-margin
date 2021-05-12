@@ -10,6 +10,9 @@ interface IPosition {
     /// @dev Points to immutable FuseMarginController instance
     function fuseMarginController() external returns (IFuseMarginController);
 
+    /// @dev Version of position contract
+    function version() external returns (uint256);
+
     /// @dev Initializes the contract once after creation
     /// @param _fuseMarginController Address of FuseMarginController
     function initialize(IFuseMarginController _fuseMarginController) external;

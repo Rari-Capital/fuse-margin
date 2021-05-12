@@ -106,6 +106,8 @@ describe("Position", () => {
 
     const getFuseMarginController0: string = await position.fuseMarginController();
     expect(getFuseMarginController0).to.equal(fuseMarginController.address);
+    const positionVersion0: BigNumber = await position.version();
+    expect(positionVersion0.toString()).to.equal("0");
     await expect(position.initialize(attacker.address)).to.be.revertedWith(
       "Initializable: contract is already initialized",
     );
