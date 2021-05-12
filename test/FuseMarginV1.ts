@@ -286,6 +286,7 @@ describe("FuseMarginV1", () => {
       .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
     const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
     const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    
     const wbtcAddAmount: BigNumber = BigNumber.from("10000000");
     await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcAddAmount);
     await expect(
@@ -294,6 +295,7 @@ describe("FuseMarginV1", () => {
         .addToPosition(WBTC.address, fr4WBTC.address, fusePool4, [], false, BigNumber.from(0), wbtcAddAmount),
     );
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+
     expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.add(wbtcAddAmount));
   });
 
@@ -333,6 +335,7 @@ describe("FuseMarginV1", () => {
       .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
     const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
     const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+
     const wbtcAddAmount: BigNumber = BigNumber.from("10000000");
     await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcAddAmount);
     await expect(
@@ -349,6 +352,7 @@ describe("FuseMarginV1", () => {
         ),
     );
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+
     expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.add(wbtcAddAmount));
   });
 
