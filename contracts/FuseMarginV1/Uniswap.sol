@@ -178,7 +178,7 @@ contract Uniswap is IUniswapV2Callee {
     ) internal returns (uint256) {
         IERC20(from).safeApprove(exchange, amount);
         (bool success, ) = exchange.call(data);
-        if (!success) revert("FuseMarginV1: Swap failed");
+        require(success, "FuseMarginV1: Swap failed");
         return IERC20(to).balanceOf(address(this));
     }
 
