@@ -17,20 +17,10 @@ abstract contract FuseMarginBase is IFuseMarginV1 {
         fuseMarginController = IFuseMarginController(_fuseMarginController);
     }
 
-    /// @dev Fallback for reciving Ether
-    receive() external payable {}
-
     /// @dev Checks if caller is controller owner
     modifier isControllerOwner() {
         require(msg.sender == IOwnable(address(fuseMarginController)).owner(), "FuseMarginV1: Not owner of controller");
         _;
-    }
-
-    /// @dev Transfer ETH balance
-    /// @param to Address to send to
-    /// @param amount Amount of ETH to send
-    function transferETH(address payable to, uint256 amount) external isControllerOwner {
-        to.transfer(amount);
     }
 
     /// @dev Transfers token balance

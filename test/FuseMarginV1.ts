@@ -134,9 +134,6 @@ describe("FuseMarginV1", () => {
 
   it("should revert if not controller owner", async () => {
     await expect(
-      fuseMarginV1.connect(attacker).transferETH(ethers.constants.AddressZero, BigNumber.from(0)),
-    ).to.be.revertedWith("FuseMarginV1: Not owner of controller");
-    await expect(
       fuseMarginV1
         .connect(attacker)
         .transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
@@ -162,17 +159,8 @@ describe("FuseMarginV1", () => {
     ).to.be.revertedWith("FuseMarginV1: only permissioned UniswapV2 pair can call");
   });
 
-  it("should transfer ETH and tokens", async () => {
-    const ethBalance0 = await ethers.provider.getBalance(fuseMarginV1.address);
-    expect(ethBalance0).to.equal(BigNumber.from(0));
+  it("should transfer tokens", async () => {
     const ethDepositAmount = ethers.utils.parseEther("1");
-    await owner.sendTransaction({ to: fuseMarginV1.address, value: ethDepositAmount });
-    const ethBalance1 = await ethers.provider.getBalance(fuseMarginV1.address);
-    expect(ethBalance1).to.equal(ethDepositAmount);
-    await fuseMarginV1.transferETH(owner.address, ethDepositAmount);
-    const ethBalance2 = await ethers.provider.getBalance(fuseMarginV1.address);
-    expect(ethBalance2).to.equal(BigNumber.from(0));
-
     const daiBalance3 = await DAI.balanceOf(fuseMarginV1.address);
     expect(daiBalance3).to.equal(BigNumber.from(0));
     await DAI.connect(impersonateAddressSigner).transfer(fuseMarginV1.address, ethDepositAmount);
