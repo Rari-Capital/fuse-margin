@@ -51,7 +51,7 @@ const config: HardhatUserConfig = {
   },
   gasReporter: {
     currency: "USD",
-    gasPrice: 50,
+    gasPrice: 100,
     coinmarketcap: COINMARKETCAP,
   },
   typechain: {
