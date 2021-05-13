@@ -72,21 +72,21 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
     }
 
     /// @dev Adds collateral to an existing position
+    /// @param tokenId Position tokenId to close
+    /// @param depositAmount Amount of base to add as collateral
+    /// @param enterMarkets If true, markets will be entered
     /// @param base Token to add
     /// @param cBase Equivalent cToken
     /// @param comptroller Address of Comptroller for the pool
     /// @param cTokens List of cToken addresses to enable as collateral
-    /// @param enterMarkets If true, markets will be entered
-    /// @param tokenId Position tokenId to close
-    /// @param depositAmount Amount of base to add as collateral
     function addToPosition(
+        uint256 tokenId,
+        uint256 depositAmount,
+        bool enterMarkets,
         address base,
         address cBase,
         address comptroller,
-        address[] calldata cTokens,
-        bool enterMarkets,
-        uint256 tokenId,
-        uint256 depositAmount
+        address[] calldata cTokens
     ) external override isOwner(tokenId) {
         IPosition position = IPosition(fuseMarginController.positions(tokenId));
         if (enterMarkets) {
@@ -97,15 +97,15 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
     }
 
     /// @dev Withdraws collateral from an existing position
-    /// @param base Token to withdraw
-    /// @param cBase Equivalent cToken
     /// @param tokenId Position tokenId to close
     /// @param redeemAmount Amount of base to withdraw
+    /// @param base Token to withdraw
+    /// @param cBase Equivalent cToken
     function withdrawFromPosition(
-        address base,
-        address cBase,
         uint256 tokenId,
-        uint256 redeemAmount
+        uint256 redeemAmount,
+        address base,
+        address cBase
     ) external override isOwner(tokenId) {
         IPosition(fuseMarginController.positions(tokenId)).redeemUnderlying(base, cBase, msg.sender, redeemAmount);
     }
