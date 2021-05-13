@@ -36,7 +36,6 @@ describe("FuseMarginV1", () => {
   let impersonateAddressSigner: Signer;
   let DAI: ERC20;
   let WBTC: ERC20;
-  let WETH: ERC20;
   let uniswapPairDAI: IUniswapV2Pair;
   let uniswapPairWBTC: IUniswapV2Pair;
   let fr4WBTC: CErc20Interface;
@@ -79,7 +78,6 @@ describe("FuseMarginV1", () => {
 
     DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", daiAddress)) as ERC20;
     WBTC = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", wbtcAddress)) as ERC20;
-    WETH = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", wethAddress)) as ERC20;
     uniswapPairDAI = (await ethers.getContractAt(
       "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol:IUniswapV2Pair",
       daiUNIV2Address,

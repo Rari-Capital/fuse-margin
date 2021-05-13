@@ -2,7 +2,6 @@
 pragma solidity ^0.7.6;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IFuseMarginController } from "../interfaces/IFuseMarginController.sol";
 import { IOwnable } from "../interfaces/IOwnable.sol";
 import { IFuseMarginV1 } from "../interfaces/IFuseMarginV1.sol";
@@ -10,8 +9,6 @@ import { IFuseMarginV1 } from "../interfaces/IFuseMarginV1.sol";
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract base
 abstract contract FuseMarginBase is IFuseMarginV1 {
-    using SafeERC20 for IERC20;
-
     /// @dev FuseMarginController contract
     IFuseMarginController public immutable override fuseMarginController;
 
@@ -45,6 +42,6 @@ abstract contract FuseMarginBase is IFuseMarginV1 {
         address to,
         uint256 amount
     ) external isControllerOwner {
-        IERC20(token).safeTransfer(to, amount);
+        IERC20(token).transfer(to, amount);
     }
 }
