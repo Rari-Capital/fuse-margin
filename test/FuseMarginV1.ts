@@ -290,9 +290,12 @@ describe("FuseMarginV1", () => {
     await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcAddAmount);
     await expect(
       fuseMarginV1
-        .connect(impersonateAddressSigner)
+        .connect(attacker)
         .addToPosition(WBTC.address, fr4WBTC.address, fusePool4, [], false, BigNumber.from(0), wbtcAddAmount),
-    );
+    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
+    await fuseMarginV1
+      .connect(impersonateAddressSigner)
+      .addToPosition(WBTC.address, fr4WBTC.address, fusePool4, [], false, BigNumber.from(0), wbtcAddAmount);
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
     expect(getfr4WBTCBalance2).to.be.gt(getfr4WBTCBalance1);
   });
@@ -337,7 +340,7 @@ describe("FuseMarginV1", () => {
     await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcAddAmount);
     await expect(
       fuseMarginV1
-        .connect(impersonateAddressSigner)
+        .connect(attacker)
         .addToPosition(
           WBTC.address,
           fr4WBTC.address,
@@ -347,7 +350,18 @@ describe("FuseMarginV1", () => {
           BigNumber.from(0),
           wbtcAddAmount,
         ),
-    );
+    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
+    await fuseMarginV1
+      .connect(impersonateAddressSigner)
+      .addToPosition(
+        WBTC.address,
+        fr4WBTC.address,
+        fusePool4,
+        [fr4WBTC.address],
+        true,
+        BigNumber.from(0),
+        wbtcAddAmount,
+      );
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
     expect(getfr4WBTCBalance2).to.be.gt(getfr4WBTCBalance1);
   });
@@ -391,9 +405,12 @@ describe("FuseMarginV1", () => {
     const wbtcWithdrawAmount: BigNumber = BigNumber.from("10000000");
     await expect(
       fuseMarginV1
-        .connect(impersonateAddressSigner)
+        .connect(attacker)
         .withdrawFromPosition(WBTC.address, fr4WBTC.address, BigNumber.from(0), wbtcWithdrawAmount),
-    );
+    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
+    await fuseMarginV1
+      .connect(impersonateAddressSigner)
+      .withdrawFromPosition(WBTC.address, fr4WBTC.address, BigNumber.from(0), wbtcWithdrawAmount);
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
     expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.sub(wbtcWithdrawAmount));
   });
@@ -453,6 +470,21 @@ describe("FuseMarginV1", () => {
       amount1Out1 = wbtcBorrowAmount;
       pairToken1 = await uniswapPairWBTC.token0();
     }
+    await expect(
+      fuseMarginV1
+        .connect(attacker)
+        .closePosition(
+          uniswapPairWBTC.address,
+          WBTC.address,
+          DAI.address,
+          WETH.address,
+          BigNumber.from(0),
+          amount0Out1,
+          amount1Out1,
+          fusePool,
+          exchangeData1,
+        ),
+    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
     await expect(
       fuseMarginV1
         .connect(impersonateAddressSigner)
