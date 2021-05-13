@@ -43,30 +43,31 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
     }
 
     /// @dev Opens a new position, provided an amount of base tokens, must approve base providedAmount before calling
-    /// @param pair Uniswap V2 pair address to flash loan quote from
-    /// @param base Base token address
-    /// @param quote Quote token address (will be flash loaned from Uniswap)
-    /// @param pairToken The token other than quote in the Uniswap pair
     /// @param providedAmount Amount of base provided
     /// @param amount0Out Desired amount of token0 to borrow (0 if not being borrowed)
     /// @param amount1Out Desired amount of token1 to borrow (0 if not being borrowed)
-    /// @param fusePool Encoded fuse pool details (address comptroller, address cBase, address cQuote)
-    /// @param exchangeData Encoded swap details (address exchange, bytes memory data)
+    /// @param pair Uniswap V2 pair address to flash loan quote from
+    /// @param addresses List of addresses to interact with
+    ///                  [base, quote, pairToken, comptroller, cBase, cQuote, exchange]
+    /// @param exchangeData Swap calldata
     /// @return tokenId of new position
     function openPosition(
-        IUniswapV2Pair pair,
-        address base,
-        address quote,
-        address pairToken,
         uint256 providedAmount,
         uint256 amount0Out,
         uint256 amount1Out,
-        bytes calldata fusePool,
+        address pair,
+        address[7] calldata addresses,
         bytes calldata exchangeData
     ) external override returns (uint256) {
-        (address newPosition, uint256 tokenId) = _newPosition();
-        bytes memory data = _openPosition(newPosition, base, quote, pairToken, providedAmount, fusePool, exchangeData);
-        pair.swap(amount0Out, amount1Out, address(this), data);
+        address newPosition = Clones.clone(positionImplementation);
+        IPosition(newPosition).initialize(fuseMarginController);
+        uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
+        IERC20(
+            addresses[0] /* base */
+        )
+            .safeTransferFrom(msg.sender, address(this), providedAmount);
+        bytes memory data = abi.encode(Action.Open, msg.sender, newPosition, addresses, exchangeData);
+        IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
         return tokenId;
     }
 
@@ -110,49 +111,24 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
     }
 
     /// @dev Closes an existing position, caller must own tokenId
-    /// @param pair Uniswap V2 pair address to flash loan base from
-    /// @param base Base token address (will be flash loaned from Uniswap)
-    /// @param quote Quote token address
-    /// @param pairToken The token other than base in the Uniswap pair
     /// @param tokenId Position tokenId to close
     /// @param amount0Out Desired amount of token0 to borrow (0 if not being borrowed)
     /// @param amount1Out Desired amount of token1 to borrow (0 if not being borrowed)
-    /// @param fusePool Encoded fuse pool details (address comptroller, address cBase, address cQuote)
-    /// @param exchangeData Encoded swap details (address exchange, bytes memory data)
+    /// @param pair Uniswap V2 pair address to flash loan quote from
+    /// @param addresses List of addresses to interact with
+    ///                  [base, quote, pairToken, comptroller, cBase, cQuote, exchange]
+    /// @param exchangeData Swap calldata
     function closePosition(
-        IUniswapV2Pair pair,
-        address base,
-        address quote,
-        address pairToken,
         uint256 tokenId,
         uint256 amount0Out,
         uint256 amount1Out,
-        bytes calldata fusePool,
+        address pair,
+        address[7] calldata addresses,
         bytes calldata exchangeData
     ) external override isOwner(tokenId) {
         address positionAddress = fuseMarginController.positions(tokenId);
         fuseMarginController.closePosition(tokenId);
-        bytes memory data = abi.encode(1, msg.sender, positionAddress, base, quote, pairToken, fusePool, exchangeData);
-        pair.swap(amount0Out, amount1Out, address(this), data);
-    }
-
-    function _newPosition() internal returns (address, uint256) {
-        address newPosition = Clones.clone(positionImplementation);
-        IPosition(newPosition).initialize(fuseMarginController);
-        uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
-        return (newPosition, tokenId);
-    }
-
-    function _openPosition(
-        address newPosition,
-        address base,
-        address quote,
-        address pairToken,
-        uint256 providedAmount,
-        bytes calldata fusePool,
-        bytes calldata exchangeData
-    ) internal returns (bytes memory) {
-        IERC20(base).safeTransferFrom(msg.sender, address(this), providedAmount);
-        return abi.encode(0, msg.sender, newPosition, base, quote, pairToken, fusePool, exchangeData);
+        bytes memory data = abi.encode(Action.Close, msg.sender, positionAddress, addresses, exchangeData);
+        IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
     }
 }

@@ -151,15 +151,12 @@ describe("FuseMarginV1", () => {
 
   it("should revert if not uniswap pair", async () => {
     const data: string = ethers.utils.defaultAbiCoder.encode(
-      ["uint256", "address", "address", "address", "address", "address", "bytes", "bytes"],
+      ["uint256", "address", "address", "address[7]", "bytes"],
       [
         BigNumber.from(0),
         ethers.constants.AddressZero,
         ethers.constants.AddressZero,
-        wbtcAddress,
-        daiAddress,
-        wethAddress,
-        "0x",
+        [wbtcAddress, daiAddress, wethAddress, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
         "0x",
       ],
     );
@@ -220,15 +217,12 @@ describe("FuseMarginV1", () => {
       fuseMarginV1
         .connect(impersonateAddressSigner)
         .openPosition(
-          uniswapPairDAI.address,
-          WBTC.address,
-          DAI.address,
-          pairToken,
           wbtcProvidedAmount,
           amount0Out,
           amount1Out,
-          fusePool,
-          exchangeData,
+          uniswapPairDAI.address,
+          [WBTC.address, DAI.address, pairToken, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData,
         ),
     )
       .to.emit(fuseMarginController, "Transfer")
@@ -271,15 +265,12 @@ describe("FuseMarginV1", () => {
       fuseMarginV1
         .connect(impersonateAddressSigner)
         .openPosition(
-          uniswapPairDAI.address,
-          WBTC.address,
-          DAI.address,
-          pairToken,
           wbtcProvidedAmount,
           amount0Out,
           amount1Out,
-          fusePool,
-          exchangeData,
+          uniswapPairDAI.address,
+          [WBTC.address, DAI.address, pairToken, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData,
         ),
     )
       .to.emit(fuseMarginController, "Transfer")
@@ -321,15 +312,12 @@ describe("FuseMarginV1", () => {
       fuseMarginV1
         .connect(impersonateAddressSigner)
         .openPosition(
-          uniswapPairDAI.address,
-          WBTC.address,
-          DAI.address,
-          pairToken,
           wbtcProvidedAmount,
           amount0Out,
           amount1Out,
-          fusePool,
-          exchangeData,
+          uniswapPairDAI.address,
+          [WBTC.address, DAI.address, pairToken, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData,
         ),
     )
       .to.emit(fuseMarginController, "Transfer")
@@ -387,15 +375,12 @@ describe("FuseMarginV1", () => {
       fuseMarginV1
         .connect(impersonateAddressSigner)
         .openPosition(
-          uniswapPairDAI.address,
-          WBTC.address,
-          DAI.address,
-          pairToken,
           wbtcProvidedAmount,
           amount0Out,
           amount1Out,
-          fusePool,
-          exchangeData,
+          uniswapPairDAI.address,
+          [WBTC.address, DAI.address, pairToken, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData,
         ),
     )
       .to.emit(fuseMarginController, "Transfer")
@@ -435,15 +420,12 @@ describe("FuseMarginV1", () => {
     await fuseMarginV1
       .connect(impersonateAddressSigner)
       .openPosition(
-        uniswapPairDAI.address,
-        WBTC.address,
-        DAI.address,
-        pairToken0,
         wbtcProvidedAmount,
         amount0Out0,
         amount1Out0,
-        fusePool,
-        exchangeData0,
+        uniswapPairDAI.address,
+        [WBTC.address, DAI.address, pairToken0, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+        quoteData0,
       );
     const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
     expect(getPositions1).to.not.equal(ethers.constants.AddressZero);
@@ -474,30 +456,24 @@ describe("FuseMarginV1", () => {
       fuseMarginV1
         .connect(attacker)
         .closePosition(
-          uniswapPairWBTC.address,
-          WBTC.address,
-          DAI.address,
-          WETH.address,
           BigNumber.from(0),
           amount0Out1,
           amount1Out1,
-          fusePool,
-          exchangeData1,
+          uniswapPairWBTC.address,
+          [WBTC.address, DAI.address, pairToken1, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData1,
         ),
     ).to.be.revertedWith("FuseMarginV1: Not owner of position");
     await expect(
       fuseMarginV1
         .connect(impersonateAddressSigner)
         .closePosition(
-          uniswapPairWBTC.address,
-          WBTC.address,
-          DAI.address,
-          WETH.address,
           BigNumber.from(0),
           amount0Out1,
           amount1Out1,
-          fusePool,
-          exchangeData1,
+          uniswapPairWBTC.address,
+          [WBTC.address, DAI.address, pairToken1, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData1,
         ),
     )
       .to.emit(fuseMarginController, "Transfer")
