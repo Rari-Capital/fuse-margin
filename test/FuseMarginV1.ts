@@ -297,7 +297,7 @@ describe("FuseMarginV1", () => {
       .connect(impersonateAddressSigner)
       .addToPosition(WBTC.address, fr4WBTC.address, fusePool4, [], false, BigNumber.from(0), wbtcAddAmount);
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
-    expect(getfr4WBTCBalance2).to.be.gt(getfr4WBTCBalance1);
+    expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.add(wbtcAddAmount));
   });
 
   it("should reenter and add to position", async () => {
@@ -363,7 +363,7 @@ describe("FuseMarginV1", () => {
         wbtcAddAmount,
       );
     const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
-    expect(getfr4WBTCBalance2).to.be.gt(getfr4WBTCBalance1);
+    expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.add(wbtcAddAmount));
   });
 
   it("should withdraw from position", async () => {
