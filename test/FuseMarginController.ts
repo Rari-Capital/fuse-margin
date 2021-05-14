@@ -10,7 +10,11 @@ import {
   Position__factory,
   ERC20,
 } from "../typechain";
-import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
+import {
+  fuseMarginControllerName,
+  fuseMarginControllerSymbol,
+  fuseMarginControllerBaseURI,
+} from "../scripts/constants/constructors";
 import { uniswapFactoryAddress, impersonateAddress, daiAddress } from "../scripts/constants/addresses";
 
 describe("FuseMarginController", () => {
@@ -33,10 +37,7 @@ describe("FuseMarginController", () => {
       "contracts/FuseMarginController.sol:FuseMarginController",
       owner,
     )) as FuseMarginController__factory;
-    fuseMarginController = await fuseMarginControllerFactory.deploy(
-      fuseMarginControllerName,
-      fuseMarginControllerSymbol,
-    );
+    fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
     const positionFactory: Position__factory = (await ethers.getContractFactory(
       "contracts/Position.sol:Position",
@@ -92,6 +93,9 @@ describe("FuseMarginController", () => {
         .connect(attacker)
         .transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(fuseMarginController.connect(attacker).setBaseURI("")).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
   });
 
   it("should revert if not margin contract", async () => {
@@ -220,6 +224,22 @@ describe("FuseMarginController", () => {
     const [getTokenIdsOfOwner1, getPositionsOfOwner1] = await fuseMarginController.tokensOfOwner(owner.address);
     expect(getTokenIdsOfOwner1).to.deep.equal([BigNumber.from(0)]);
     expect(getPositionsOfOwner1).to.deep.equal([position.address]);
+  });
+
+  it("should set baseURI", async () => {
+    await fuseMarginController.addMarginContract(attacker.address);
+    await fuseMarginController.connect(attacker).newPosition(owner.address, position.address);
+    const tokenId: BigNumber = BigNumber.from(0);
+
+    const getTokenURI0: string = await fuseMarginController.tokenURI(tokenId);
+    expect(getTokenURI0).to.equal(fuseMarginControllerBaseURI + tokenId.toString());
+
+    const newBaseURI: string = "test";
+    await expect(fuseMarginController.setBaseURI(newBaseURI))
+      .to.emit(fuseMarginController, "SetBaseURI")
+      .withArgs(newBaseURI);
+    const getTokenURI1: string = await fuseMarginController.tokenURI(tokenId);
+    expect(getTokenURI1).to.equal(newBaseURI + tokenId.toString());
   });
 
   it("should close positions", async () => {

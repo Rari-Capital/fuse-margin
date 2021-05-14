@@ -9,7 +9,7 @@ import {
   FuseMarginV1__factory,
   Position__factory,
 } from "../typechain";
-import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
+import { fuseMarginControllerBaseURI } from "../scripts/constants/constructors";
 import { uniswapFactoryAddress } from "../scripts/constants/addresses";
 
 async function main() {
@@ -21,8 +21,7 @@ async function main() {
     deployer,
   )) as FuseMarginController__factory;
   const fuseMarginController: FuseMarginController = await fuseMarginControllerFactory.deploy(
-    fuseMarginControllerName,
-    fuseMarginControllerSymbol,
+    fuseMarginControllerBaseURI,
   );
   console.log("FuseMarginController:", fuseMarginController.address);
   const positionFactory: Position__factory = (await ethers.getContractFactory(

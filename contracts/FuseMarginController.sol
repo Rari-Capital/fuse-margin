@@ -9,6 +9,8 @@ import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 /// @author Ganesh Gautham Elango
 /// @title Core contract for controlling the Fuse margin trading protocol
 contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
+    /// @dev URL for position metadata
+    string public metadataBaseURI;
     /// @dev Gets a position address given an index (index = tokenId)
     address[] public override positions;
     /// @dev List of supported FuseMargin contracts
@@ -19,9 +21,10 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     /// @dev Number of FuseMargin contracts
     uint256 private marginContractsNum = 0;
 
-    /// @param name_ ERC721 name
-    /// @param symbol_ ERC721 symbol
-    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
+    /// @param _metadataBaseURI URL for position metadata
+    constructor(string memory _metadataBaseURI) ERC721("Fuse Margin Trading", "FUSE") {
+        metadataBaseURI = _metadataBaseURI;
+    }
 
     /// @dev Ensures functions are called from approved FuseMargin contracts
     modifier onlyMargin() {
@@ -63,6 +66,13 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
         approvedContracts[contractAddress] = false;
         marginContractsNum--;
         emit RemoveMarginContract(contractAddress, msg.sender);
+    }
+
+    /// @dev Modify NFT URL, to be called only from owner
+    /// @param _metadataBaseURI URL for position metadata
+    function setBaseURI(string memory _metadataBaseURI) external override onlyOwner {
+        metadataBaseURI = _metadataBaseURI;
+        emit SetBaseURI(_metadataBaseURI);
     }
 
     /// @dev Transfers token balance
@@ -112,5 +122,9 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     /// @return Length of positions array
     function positionsLength() external view override returns (uint256) {
         return positions.length;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return metadataBaseURI;
     }
 }

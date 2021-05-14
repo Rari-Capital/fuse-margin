@@ -14,6 +14,10 @@ interface IFuseMarginController {
     /// @param owner User who removed the contract
     event RemoveMarginContract(address indexed contractAddress, address owner);
 
+    /// @dev Emitted when a new Base URI is added
+    /// @param _metadataBaseURI URL for position metadata
+    event SetBaseURI(string indexed _metadataBaseURI);
+
     /// @dev Creates a position NFT, to be called only from FuseMargin
     /// @param user User to give the NFT to
     /// @param position The position address
@@ -31,6 +35,10 @@ interface IFuseMarginController {
     /// @dev Removes support for a new FuseMargin contract, to be called only from owner
     /// @param contractAddress Address of FuseMargin contract
     function removeMarginContract(address contractAddress) external;
+
+    /// @dev Modify NFT URL, to be called only from owner
+    /// @param _metadataBaseURI URL for position metadata
+    function setBaseURI(string memory _metadataBaseURI) external;
 
     /// @dev Gets all approved margin contracts
     /// @return List of the addresses of the approved margin contracts

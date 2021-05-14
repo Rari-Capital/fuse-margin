@@ -12,7 +12,7 @@ import {
   ComptrollerInterface,
   IWETH9,
 } from "../typechain";
-import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
+import { fuseMarginControllerBaseURI } from "../scripts/constants/constructors";
 import {
   usdcAddress,
   impersonateAddress,
@@ -46,10 +46,7 @@ describe("Position", () => {
       "contracts/FuseMarginController.sol:FuseMarginController",
       owner,
     )) as FuseMarginController__factory;
-    fuseMarginController = await fuseMarginControllerFactory.deploy(
-      fuseMarginControllerName,
-      fuseMarginControllerSymbol,
-    );
+    fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
     const positionFactory: Position__factory = (await ethers.getContractFactory(
       "contracts/Position.sol:Position",

@@ -12,7 +12,7 @@ import {
   CErc20Interface,
   IUniswapV2Pair,
 } from "../typechain";
-import { fuseMarginControllerName, fuseMarginControllerSymbol } from "../scripts/constants/constructors";
+import { fuseMarginControllerBaseURI } from "../scripts/constants/constructors";
 import {
   uniswapFactoryAddress,
   daiAddress,
@@ -54,10 +54,7 @@ describe("FuseMarginV1", () => {
       "contracts/FuseMarginController.sol:FuseMarginController",
       owner,
     )) as FuseMarginController__factory;
-    fuseMarginController = await fuseMarginControllerFactory.deploy(
-      fuseMarginControllerName,
-      fuseMarginControllerSymbol,
-    );
+    fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
     const positionFactory: Position__factory = (await ethers.getContractFactory(
       "contracts/Position.sol:Position",
