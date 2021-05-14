@@ -15,7 +15,6 @@ import { IPosition } from "./interfaces/IPosition.sol";
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
 contract FuseMarginV1 is Uniswap, FuseMarginBase {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /// @dev Position contract address
