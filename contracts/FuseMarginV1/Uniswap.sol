@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import { UniswapV2Library } from "../libraries/UniswapV2Library.sol";
-import { IPosition } from "../interfaces/IPosition.sol";
+import { IPositionV1 } from "../interfaces/IPositionV1.sol";
 import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
 
 /// @author Ganesh Gautham Elango
@@ -91,7 +91,7 @@ contract Uniswap is IUniswapV2Callee {
         )
             .safeTransfer(position, depositAmount);
         // Mint base and borrow quote
-        IPosition(position).mintAndBorrow(
+        IPositionV1(position).mintAndBorrow(
             addresses[3], /* comptroller */
             addresses[0], /* base */
             addresses[4], /* cBase */
@@ -135,7 +135,7 @@ contract Uniswap is IUniswapV2Callee {
         )
             .safeTransfer(position, repayAmount);
         // Repay quote and redeem base
-        IPosition(position).repayAndRedeem(
+        IPositionV1(position).repayAndRedeem(
             addresses[0], /* base */
             addresses[4], /* cBase */
             addresses[1], /* quote */

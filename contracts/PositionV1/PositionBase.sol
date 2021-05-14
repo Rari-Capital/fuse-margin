@@ -4,11 +4,11 @@ pragma experimental ABIEncoderV2;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import { IFuseMarginController } from "../interfaces/IFuseMarginController.sol";
-import { IPosition } from "../interfaces/IPosition.sol";
+import { IPositionV1 } from "../interfaces/IPositionV1.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Base contract for positions
-abstract contract PositionBase is IPosition, Initializable {
+abstract contract PositionBase is IPositionV1, Initializable {
     /// @dev Points to immutable FuseMarginController instance
     IFuseMarginController public override fuseMarginController;
 

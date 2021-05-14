@@ -4,10 +4,10 @@ import { expect } from "chai";
 import {
   FuseMarginController,
   FuseMarginV1,
-  Position,
+  PositionV1,
   FuseMarginController__factory,
   FuseMarginV1__factory,
-  Position__factory,
+  PositionV1__factory,
   ERC20,
 } from "../typechain";
 import {
@@ -23,7 +23,7 @@ describe("FuseMarginController", () => {
   let attacker: Wallet;
   let fuseMarginController: FuseMarginController;
   let fuseMarginV1Factory: FuseMarginV1__factory;
-  let position: Position;
+  let position: PositionV1;
   let fuseMarginV1: FuseMarginV1;
   let impersonateAddressSigner: Signer;
   let DAI: ERC20;
@@ -39,10 +39,10 @@ describe("FuseMarginController", () => {
     )) as FuseMarginController__factory;
     fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
-    const positionFactory: Position__factory = (await ethers.getContractFactory(
-      "contracts/Position.sol:Position",
+    const positionFactory: PositionV1__factory = (await ethers.getContractFactory(
+      "contracts/PositionV1.sol:PositionV1",
       owner,
-    )) as Position__factory;
+    )) as PositionV1__factory;
     position = await positionFactory.deploy();
     await position.initialize(fuseMarginController.address);
     fuseMarginV1Factory = (await ethers.getContractFactory(
@@ -67,6 +67,8 @@ describe("FuseMarginController", () => {
     expect(getSymbol).to.equal(fuseMarginControllerSymbol);
     const getOwner: string = await fuseMarginController.owner();
     expect(getOwner).to.equal(owner.address);
+    const getMetadataBaseURI: string = await fuseMarginController.metadataBaseURI();
+    expect(getMetadataBaseURI).to.equal(fuseMarginControllerBaseURI);
     const getMarginContracts: string[] = await fuseMarginController.getMarginContracts();
     expect(getMarginContracts).to.deep.equal([]);
     const [getTokensOfOwner, getPositionsOfOwner]: [BigNumber[], string[]] = await fuseMarginController.tokensOfOwner(

@@ -4,10 +4,10 @@ import { Signer, Wallet } from "ethers";
 import {
   FuseMarginController,
   FuseMarginV1,
-  Position,
+  PositionV1,
   FuseMarginController__factory,
   FuseMarginV1__factory,
-  Position__factory,
+  PositionV1__factory,
 } from "../typechain";
 import { fuseMarginControllerBaseURI } from "../scripts/constants/constructors";
 import { uniswapFactoryAddress } from "../scripts/constants/addresses";
@@ -24,12 +24,12 @@ async function main() {
     fuseMarginControllerBaseURI,
   );
   console.log("FuseMarginController:", fuseMarginController.address);
-  const positionFactory: Position__factory = (await ethers.getContractFactory(
-    "contracts/Position.sol:Position",
+  const positionFactory: PositionV1__factory = (await ethers.getContractFactory(
+    "contracts/PositionV1.sol:PositionV1",
     deployer,
-  )) as Position__factory;
-  const position: Position = await positionFactory.deploy();
-  console.log("Position:", position.address);
+  )) as PositionV1__factory;
+  const position: PositionV1 = await positionFactory.deploy();
+  console.log("PositionV1:", position.address);
   await position.initialize(fuseMarginController.address);
   const fuseMarginV1Factory: FuseMarginV1__factory = (await ethers.getContractFactory(
     "contracts/FuseMarginV1.sol:FuseMarginV1",

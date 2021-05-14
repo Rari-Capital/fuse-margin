@@ -3,9 +3,9 @@ import { Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 import {
   FuseMarginController,
-  Position,
+  PositionV1,
   FuseMarginController__factory,
-  Position__factory,
+  PositionV1__factory,
   IERC20,
   ERC20,
   CErc20Interface,
@@ -23,11 +23,11 @@ import {
   fr4DAIAddress,
 } from "../scripts/constants/addresses";
 
-describe("Position", () => {
+describe("PositionV1", () => {
   let accounts: Signer[];
   let owner: Wallet;
   let attacker: Wallet;
-  let position: Position;
+  let position: PositionV1;
   let fuseMarginController: FuseMarginController;
   let impersonateAddressSigner: Signer;
   let DAI: ERC20;
@@ -48,10 +48,10 @@ describe("Position", () => {
     )) as FuseMarginController__factory;
     fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
-    const positionFactory: Position__factory = (await ethers.getContractFactory(
-      "contracts/Position.sol:Position",
+    const positionFactory: PositionV1__factory = (await ethers.getContractFactory(
+      "contracts/PositionV1.sol:PositionV1",
       owner,
-    )) as Position__factory;
+    )) as PositionV1__factory;
     position = await positionFactory.deploy();
     await position.initialize(fuseMarginController.address);
     await fuseMarginController.addMarginContract(attacker.address);

@@ -10,7 +10,7 @@ import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2
 import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
 import { FuseMarginBase } from "./FuseMarginV1/FuseMarginBase.sol";
-import { IPosition } from "./interfaces/IPosition.sol";
+import { IPositionV1 } from "./interfaces/IPositionV1.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
@@ -59,7 +59,7 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         bytes calldata exchangeData
     ) external override returns (uint256) {
         address newPosition = Clones.clone(positionImplementation);
-        IPosition(newPosition).initialize(fuseMarginController);
+        IPositionV1(newPosition).initialize(fuseMarginController);
         uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
         IERC20(
             addresses[0] /* base */
@@ -87,7 +87,7 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         address comptroller,
         address[] calldata cTokens
     ) external override isOwner(tokenId) {
-        IPosition position = IPosition(fuseMarginController.positions(tokenId));
+        IPositionV1 position = IPositionV1(fuseMarginController.positions(tokenId));
         if (enterMarkets) {
             position.enterMarkets(comptroller, cTokens);
         }
@@ -106,7 +106,7 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         address base,
         address cBase
     ) external override isOwner(tokenId) {
-        IPosition(fuseMarginController.positions(tokenId)).redeemUnderlying(base, cBase, msg.sender, redeemAmount);
+        IPositionV1(fuseMarginController.positions(tokenId)).redeemUnderlying(base, cBase, msg.sender, redeemAmount);
     }
 
     /// @dev Closes an existing position, caller must own tokenId

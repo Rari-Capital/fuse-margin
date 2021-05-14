@@ -1,49 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.7.0;
+pragma solidity ^0.7.6;
 pragma experimental ABIEncoderV2;
 
-import { IFuseMarginController } from "./IFuseMarginController.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { CErc20Interface } from "./interfaces/CErc20Interface.sol";
+import { ComptrollerInterface } from "./interfaces/ComptrollerInterface.sol";
+import { PositionBase } from "./PositionV1/PositionBase.sol";
 
 /// @author Ganesh Gautham Elango
-/// @title Position interface
-interface IPosition {
-    /// @dev Points to immutable FuseMarginController instance
-    function fuseMarginController() external returns (IFuseMarginController);
-
-    /// @dev Version of position contract
-    function version() external returns (uint256);
-
-    /// @dev Initializes the contract once after creation
-    /// @param _fuseMarginController Address of FuseMarginController
-    function initialize(IFuseMarginController _fuseMarginController) external;
-
-    /// @dev Allows for generalized calls through this position
-    /// @param target Contract address to call
-    /// @param callData ABI encoded function/params
-    /// @return Whether call was successful
-    /// @return Return bytes
-    function proxyCall(address target, bytes calldata callData) external payable returns (bool, bytes memory);
-
-    /// @dev Allows for batched generalized calls through this position
-    /// @param targets Contract addresses to call
-    /// @param callDatas ABI encoded function/params
-    /// @return Whether calls were successful
-    /// @return Return bytes
-    function proxyMulticall(address[] calldata targets, bytes[] calldata callDatas)
-        external
-        returns (bool[] memory, bytes[] memory);
-
-    /// @dev Delegate call
-    /// @param target Contract address to delegatecall
-    /// @param callData ABI encoded function/params
-    /// @return Whether call was successful
-    /// @return Return bytes
-    function delegatecall(address target, bytes calldata callData) external payable returns (bool, bytes memory);
-
-    /// @dev Transfer ETH balance
-    /// @param to Address to send to
-    /// @param amount Amount of ETH to send
-    function transferETH(address payable to, uint256 amount) external;
+/// @title Position contract to be cloned for each position
+contract PositionV1 is PositionBase {
+    using SafeERC20 for IERC20;
 
     /// @dev Transfers token balance
     /// @param token Token address
@@ -53,7 +21,9 @@ interface IPosition {
         address token,
         address to,
         uint256 amount
-    ) external;
+    ) external override onlyMargin {
+        IERC20(token).safeTransfer(to, amount);
+    }
 
     /// @dev Deposits token into pool, must have transferred the token to this contract before calling
     /// @param base Token to deposit
@@ -63,12 +33,20 @@ interface IPosition {
         address base,
         address cBase,
         uint256 depositAmount
-    ) external;
+    ) external override onlyMargin {
+        IERC20(base).safeApprove(cBase, depositAmount);
+        require(CErc20Interface(cBase).mint(depositAmount) == 0, "Position: mint in mint failed");
+    }
 
     /// @dev Enable tokens as collateral
     /// @param comptroller Address of Comptroller for the pool
     /// @param cTokens List of cToken addresses to enable as collateral
-    function enterMarkets(address comptroller, address[] calldata cTokens) external;
+    function enterMarkets(address comptroller, address[] calldata cTokens) external override onlyMargin {
+        uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        for (uint256 i = 0; i < errors.length; i++) {
+            require(errors[i] == 0, "Position: enterMarkets in enterMarkets failed");
+        }
+    }
 
     /// @dev Borrow a token, must have first called enterMarkets for the base collateral
     /// @param quote Token to borrow
@@ -80,7 +58,10 @@ interface IPosition {
         address cQuote,
         address transferTo,
         uint256 borrowAmount
-    ) external;
+    ) external override onlyMargin {
+        require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in borrow failed");
+        IERC20(quote).safeTransfer(transferTo, borrowAmount);
+    }
 
     /// @dev Repay borrowed token, must have transferred the token to this contract before calling
     /// @param quote Token to repay
@@ -90,7 +71,10 @@ interface IPosition {
         address quote,
         address cQuote,
         uint256 repayAmount
-    ) external;
+    ) external override onlyMargin {
+        IERC20(quote).safeApprove(cQuote, repayAmount);
+        require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayBorrow failed");
+    }
 
     /// @dev Withdraw token from pool, given token amount
     /// @param base Token to withdraw
@@ -102,7 +86,13 @@ interface IPosition {
         address cBase,
         address transferTo,
         uint256 redeemAmount
-    ) external;
+    ) external override onlyMargin {
+        require(
+            CErc20Interface(cBase).redeemUnderlying(redeemAmount) == 0,
+            "Position: redeemUnderlying in redeemUnderlying failed"
+        );
+        IERC20(base).safeTransfer(transferTo, redeemAmount);
+    }
 
     /// @dev Deposits a token, enables it as collateral and borrows a token,
     ///      must have transferred the deposit token to this contract before calling
@@ -121,21 +111,41 @@ interface IPosition {
         address cQuote,
         uint256 depositAmount,
         uint256 borrowAmount
-    ) external;
+    ) external override onlyMargin {
+        IERC20(base).safeApprove(cBase, depositAmount);
+        require(CErc20Interface(cBase).mint(depositAmount) == 0, "Position: mint in mintAndBorrow failed");
+
+        address[] memory cTokens = new address[](1);
+        cTokens[0] = cBase;
+        uint256[] memory errors = ComptrollerInterface(comptroller).enterMarkets(cTokens);
+        require(errors[0] == 0, "Position: enterMarkets in mintAndBorrow failed");
+
+        require(CErc20Interface(cQuote).borrow(borrowAmount) == 0, "Position: borrow in mintAndBorrow failed");
+        IERC20(quote).safeTransfer(msg.sender, borrowAmount);
+    }
 
     /// @dev Repay quote and redeem base, must have transferred the repay token to this contract before calling
     /// @param base Token to redeem
     /// @param cBase Equivalent cToken
     /// @param quote Token to repay
     /// @param cQuote Equivalent cToken
-    /// @param repayAmount Amount to repay
     /// @param redeemTokens Amount of cTokens to redeem
+    /// @param repayAmount Amount to repay
     function repayAndRedeem(
         address base,
         address cBase,
         address quote,
         address cQuote,
-        uint256 repayAmount,
-        uint256 redeemTokens
-    ) external;
+        uint256 redeemTokens,
+        uint256 repayAmount
+    ) external override onlyMargin {
+        IERC20(quote).safeApprove(cQuote, repayAmount);
+        require(
+            CErc20Interface(cQuote).repayBorrow(repayAmount) == 0,
+            "Position: repayBorrow in repayAndRedeem failed"
+        );
+
+        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in repayAndRedeem failed");
+        IERC20(base).safeTransfer(msg.sender, IERC20(base).balanceOf(address(this)));
+    }
 }
