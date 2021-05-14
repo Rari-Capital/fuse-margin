@@ -13,18 +13,6 @@ import { PositionBase } from "./Position/PositionBase.sol";
 contract Position is PositionBase {
     using SafeERC20 for IERC20;
 
-    /// @dev Approves token spending
-    /// @param token Token address
-    /// @param to Approve to address
-    /// @param amount Amount to approve
-    function approveToken(
-        address token,
-        address to,
-        uint256 amount
-    ) external override onlyMargin {
-        IERC20(token).safeApprove(to, amount);
-    }
-
     /// @dev Transfers token balance
     /// @param token Token address
     /// @param to Transfer to address
@@ -60,13 +48,6 @@ contract Position is PositionBase {
         }
     }
 
-    /// @dev Disable a token as collateral
-    /// @param comptroller Address of Comptroller for the pool
-    /// @param cToken Token to disable
-    function exitMarket(address comptroller, address cToken) external override onlyMargin {
-        require(ComptrollerInterface(comptroller).exitMarket(cToken) == 0, "Position: exitMarket in exitMarket failed");
-    }
-
     /// @dev Borrow a token, must have first called enterMarkets for the base collateral
     /// @param quote Token to borrow
     /// @param cQuote Equivalent cToken
@@ -93,21 +74,6 @@ contract Position is PositionBase {
     ) external override onlyMargin {
         IERC20(quote).safeApprove(cQuote, repayAmount);
         require(CErc20Interface(cQuote).repayBorrow(repayAmount) == 0, "Position: repayBorrow in repayBorrow failed");
-    }
-
-    /// @dev Withdraw token from pool, given cToken amount
-    /// @param base Token to withdraw
-    /// @param cBase Equivalent cToken
-    /// @param transferTo Address to transfer borrowed tokens to
-    /// @param redeemTokens Amount of cToken to withdraw
-    function redeem(
-        address base,
-        address cBase,
-        address transferTo,
-        uint256 redeemTokens
-    ) external override onlyMargin {
-        require(CErc20Interface(cBase).redeem(redeemTokens) == 0, "Position: redeem in redeem failed");
-        IERC20(base).safeTransfer(transferTo, IERC20(base).balanceOf(address(this)));
     }
 
     /// @dev Withdraw token from pool, given token amount

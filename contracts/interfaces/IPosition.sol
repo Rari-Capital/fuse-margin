@@ -45,16 +45,6 @@ interface IPosition {
     /// @param amount Amount of ETH to send
     function transferETH(address payable to, uint256 amount) external;
 
-    /// @dev Approves token spending
-    /// @param token Token address
-    /// @param to Approve to address
-    /// @param amount Amount to approve
-    function approveToken(
-        address token,
-        address to,
-        uint256 amount
-    ) external;
-
     /// @dev Transfers token balance
     /// @param token Token address
     /// @param to Transfer to address
@@ -80,11 +70,6 @@ interface IPosition {
     /// @param cTokens List of cToken addresses to enable as collateral
     function enterMarkets(address comptroller, address[] calldata cTokens) external;
 
-    /// @dev Disable a token as collateral
-    /// @param comptroller Address of Comptroller for the pool
-    /// @param cToken Token to disable
-    function exitMarket(address comptroller, address cToken) external;
-
     /// @dev Borrow a token, must have first called enterMarkets for the base collateral
     /// @param quote Token to borrow
     /// @param cQuote Equivalent cToken
@@ -105,18 +90,6 @@ interface IPosition {
         address quote,
         address cQuote,
         uint256 repayAmount
-    ) external;
-
-    /// @dev Withdraw token from pool, given cToken amount
-    /// @param base Token to withdraw
-    /// @param cBase Equivalent cToken
-    /// @param transferTo Address to transfer borrowed tokens to
-    /// @param redeemTokens Amount of cToken to withdraw
-    function redeem(
-        address base,
-        address cBase,
-        address transferTo,
-        uint256 redeemTokens
     ) external;
 
     /// @dev Withdraw token from pool, given token amount
