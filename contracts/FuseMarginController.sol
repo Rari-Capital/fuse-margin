@@ -9,8 +9,6 @@ import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 /// @author Ganesh Gautham Elango
 /// @title Core contract for controlling the Fuse margin trading protocol
 contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
-    /// @dev URL for position metadata
-    string public metadataBaseURI;
     /// @dev Gets a position address given an index (index = tokenId)
     address[] public override positions;
     /// @dev List of supported FuseMargin contracts
@@ -18,6 +16,8 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     /// @dev Check if FuseMargin contract address is approved
     mapping(address => bool) public override approvedContracts;
 
+    /// @dev URL for position metadata
+    string private metadataBaseURI;
     /// @dev Number of FuseMargin contracts
     uint256 private marginContractsNum = 0;
 

@@ -67,8 +67,6 @@ describe("FuseMarginController", () => {
     expect(getSymbol).to.equal(fuseMarginControllerSymbol);
     const getOwner: string = await fuseMarginController.owner();
     expect(getOwner).to.equal(owner.address);
-    const getMetadataBaseURI: string = await fuseMarginController.metadataBaseURI();
-    expect(getMetadataBaseURI).to.equal(fuseMarginControllerBaseURI);
     const getMarginContracts: string[] = await fuseMarginController.getMarginContracts();
     expect(getMarginContracts).to.deep.equal([]);
     const [getTokensOfOwner, getPositionsOfOwner]: [BigNumber[], string[]] = await fuseMarginController.tokensOfOwner(
