@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0;
 
+/// @author Ganesh Gautham Elango
+/// @title FuseMarginController Interface
 interface IFuseMarginController {
     /// @dev Emitted when support of FuseMargin contract is added
     /// @param contractAddress Address of FuseMargin contract added

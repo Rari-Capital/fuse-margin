@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
-import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import { IFuseMarginController } from "./IFuseMarginController.sol";
 
+/// @author Ganesh Gautham Elango
+/// @title FuseMarginV1 Interface
 interface IFuseMarginV1 {
     /// @dev FuseMarginController contract
     function fuseMarginController() external view returns (IFuseMarginController);
