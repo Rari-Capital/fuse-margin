@@ -276,13 +276,12 @@ describe("PositionV1", () => {
     await position.connect(attacker).enterMarkets(FusePool4.address, [fr4USDC.address]);
 
     const daiBalance2 = await DAI.balanceOf(attacker.address);
-    expect(daiBalance2).to.equal(BigNumber.from(0));
     const fr4DAIBalance2 = await fr4DAI.borrowBalanceStored(position.address);
     expect(fr4DAIBalance2).to.equal(BigNumber.from(0));
     const borrowAmountDAI = ethers.utils.parseUnits("10000", await DAI.decimals());
     await position.connect(attacker).borrow(DAI.address, fr4DAI.address, attacker.address, borrowAmountDAI);
     const daiBalance3 = await DAI.balanceOf(attacker.address);
-    expect(daiBalance3).to.equal(borrowAmountDAI);
+    expect(daiBalance3.sub(daiBalance2)).to.equal(borrowAmountDAI);
     const fr4DAIBalance3 = await fr4DAI.borrowBalanceStored(position.address);
     expect(fr4DAIBalance3).to.equal(borrowAmountDAI);
   });

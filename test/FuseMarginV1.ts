@@ -30,6 +30,7 @@ describe("FuseMarginV1", () => {
   let accounts: Signer[];
   let owner: Wallet;
   let attacker: Wallet;
+  let user: Wallet;
   let fuseMarginController: FuseMarginController;
   let position: PositionV1;
   let fuseMarginV1: FuseMarginV1;
@@ -49,6 +50,7 @@ describe("FuseMarginV1", () => {
     accounts = await ethers.getSigners();
     owner = <Wallet>accounts[0];
     attacker = <Wallet>accounts[1];
+    user = <Wallet>accounts[1];
 
     const fuseMarginControllerFactory: FuseMarginController__factory = (await ethers.getContractFactory(
       "contracts/FuseMarginController.sol:FuseMarginController",
@@ -457,5 +459,124 @@ describe("FuseMarginV1", () => {
     expect(wbtcBalance2).to.be.gt(wbtcBalance1);
     const daiBalance2 = await DAI.balanceOf(impersonateAddress);
     expect(daiBalance2).to.be.gte(daiBalance1);
+  });
+
+  it("should close position after transfer", async () => {
+    // https://api.0x.org/swap/v1/quote?sellToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&buyToken=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&sellAmount=3000000000000000000000&excludedSources=Uniswap_V2&slippagePercentage=1
+    const quoteData0: string =
+      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
+    let amount0Out0: BigNumber = daiBorrowAmount;
+    let amount1Out0: BigNumber = BigNumber.from(0);
+    let pairToken0: string = await uniswapPairDAI.token1();
+    if (DAI.address === pairToken0) {
+      amount0Out0 = BigNumber.from(0);
+      amount1Out0 = daiBorrowAmount;
+      pairToken0 = await uniswapPairDAI.token0();
+    }
+    const wbtcBalance0 = await WBTC.balanceOf(impersonateAddress);
+    const getBalanceOf0 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf0).to.equal(BigNumber.from(0));
+    await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
+    await fuseMarginV1
+      .connect(impersonateAddressSigner)
+      .openPosition(
+        wbtcProvidedAmount,
+        amount0Out0,
+        amount1Out0,
+        uniswapPairDAI.address,
+        [WBTC.address, DAI.address, pairToken0, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+        quoteData0,
+      );
+    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions1).to.not.equal(ethers.constants.AddressZero);
+    const getBalanceOf1 = await fuseMarginController.balanceOf(impersonateAddress);
+    expect(getBalanceOf1).to.equal(BigNumber.from(1));
+    const getOwnerOf1 = await fuseMarginController.ownerOf(BigNumber.from(0));
+    expect(getOwnerOf1).to.equal(impersonateAddress);
+    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    expect(getfr4WBTCBalance1).to.be.gt(wbtcProvidedAmount);
+    const getfr4DAIBalance1 = await fr4DAI.borrowBalanceStored(getPositions1);
+    expect(getfr4DAIBalance1).to.be.gt(daiBorrowAmount);
+    const wbtcBalance1 = await WBTC.balanceOf(impersonateAddress);
+    expect(wbtcBalance1).to.equal(wbtcBalance0.sub(wbtcProvidedAmount));
+    const wbtcBalanceUser = await WBTC.balanceOf(user.address);
+    const daiBalanceUser = await DAI.balanceOf(user.address);
+
+    const quoteData1: string =
+      "0xd9627aa40000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000051829e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000b998aed513607d1520";
+    let amount0Out1: BigNumber = wbtcBorrowAmount;
+    let amount1Out1: BigNumber = BigNumber.from(0);
+    let pairToken1: string = await uniswapPairWBTC.token1();
+    if (WBTC.address === pairToken1) {
+      amount0Out1 = BigNumber.from(0);
+      amount1Out1 = wbtcBorrowAmount;
+      pairToken1 = await uniswapPairWBTC.token0();
+    }
+    await expect(
+      fuseMarginV1
+        .connect(attacker)
+        .closePosition(
+          BigNumber.from(0),
+          amount0Out1,
+          amount1Out1,
+          uniswapPairWBTC.address,
+          [WBTC.address, DAI.address, pairToken1, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData1,
+        ),
+    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
+    await expect(
+      fuseMarginController.connect(attacker).transferFrom(impersonateAddress, user.address, BigNumber.from(0)),
+    ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+    await expect(
+      fuseMarginController
+        .connect(impersonateAddressSigner)
+        .transferFrom(impersonateAddress, user.address, BigNumber.from(0)),
+    )
+      .to.emit(fuseMarginController, "Transfer")
+      .withArgs(impersonateAddress, user.address, BigNumber.from(0));
+    await expect(
+      fuseMarginV1
+        .connect(impersonateAddressSigner)
+        .closePosition(
+          BigNumber.from(0),
+          amount0Out1,
+          amount1Out1,
+          uniswapPairWBTC.address,
+          [WBTC.address, DAI.address, pairToken1, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData1,
+        ),
+    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
+    await expect(
+      fuseMarginV1
+        .connect(user)
+        .closePosition(
+          BigNumber.from(0),
+          amount0Out1,
+          amount1Out1,
+          uniswapPairWBTC.address,
+          [WBTC.address, DAI.address, pairToken1, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
+          quoteData1,
+        ),
+    )
+      .to.emit(fuseMarginController, "Transfer")
+      .withArgs(user.address, ethers.constants.AddressZero, BigNumber.from(0));
+    const getPositions2 = await fuseMarginController.positions(BigNumber.from(0));
+    expect(getPositions2).to.equal(getPositions1);
+    const getBalanceOf2 = await fuseMarginController.balanceOf(user.address);
+    expect(getBalanceOf2).to.equal(BigNumber.from(0));
+    await expect(fuseMarginController.ownerOf(BigNumber.from(0))).to.be.revertedWith(
+      "ERC721: owner query for nonexistent token",
+    );
+    const [getTokenIdsOfOwner2, getPositionsOfOwner2] = await fuseMarginController.tokensOfOwner(user.address);
+    expect(getTokenIdsOfOwner2).to.deep.equal([]);
+    expect(getPositionsOfOwner2).to.deep.equal([]);
+    const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    expect(getfr4WBTCBalance2).to.equal(BigNumber.from(0));
+    const getfr4DAIBalance2 = await fr4DAI.borrowBalanceStored(getPositions1);
+    expect(getfr4DAIBalance2).to.equal(BigNumber.from(0));
+    const wbtcBalance2 = await WBTC.balanceOf(user.address);
+    expect(wbtcBalance2).to.be.gt(wbtcBalanceUser);
+    const daiBalance2 = await DAI.balanceOf(user.address);
+    expect(daiBalance2).to.be.gte(daiBalanceUser);
   });
 });

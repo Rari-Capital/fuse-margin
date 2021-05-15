@@ -16,10 +16,10 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
     /// @dev Check if FuseMargin contract address is approved
     mapping(address => bool) public override approvedContracts;
 
-    /// @dev URL for position metadata
-    string private metadataBaseURI;
     /// @dev Number of FuseMargin contracts
     uint256 private marginContractsNum = 0;
+    /// @dev URL for position metadata
+    string private metadataBaseURI;
 
     /// @param _metadataBaseURI URL for position metadata
     constructor(string memory _metadataBaseURI) ERC721("Fuse Margin Trading", "FUSE") {
