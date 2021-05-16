@@ -4,11 +4,13 @@ import { expect } from "chai";
 import {
   FuseMarginController,
   FuseMarginV1,
-  PositionV1,
+  ConnectorV1,
+  PositionProxy,
   ERC20,
   FuseMarginController__factory,
   FuseMarginV1__factory,
-  PositionV1__factory,
+  PositionProxy__factory,
+  ConnectorV1__factory,
   CErc20Interface,
   IUniswapV2Pair,
 } from "../typechain";
@@ -32,7 +34,8 @@ describe("FuseMarginV1", () => {
   let attacker: Wallet;
   let user: Wallet;
   let fuseMarginController: FuseMarginController;
-  let position: PositionV1;
+  let position: PositionProxy;
+  let connector: ConnectorV1;
   let fuseMarginV1: FuseMarginV1;
   let impersonateAddressSigner: Signer;
   let DAI: ERC20;
@@ -58,20 +61,26 @@ describe("FuseMarginV1", () => {
     )) as FuseMarginController__factory;
     fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
-    const positionFactory: PositionV1__factory = (await ethers.getContractFactory(
-      "contracts/PositionV1.sol:PositionV1",
+    const positionFactory: PositionProxy__factory = (await ethers.getContractFactory(
+      "contracts/PositionProxy.sol:PositionProxy",
       owner,
-    )) as PositionV1__factory;
-    position = await positionFactory.deploy();
-    await position.initialize(fuseMarginController.address);
+    )) as PositionProxy__factory;
+    position = await positionFactory.deploy(fuseMarginController.address);
+    const connectorFactory: ConnectorV1__factory = (await ethers.getContractFactory(
+      "contracts/ConnectorV1.sol:ConnectorV1",
+      owner,
+    )) as ConnectorV1__factory;
+    connector = await connectorFactory.deploy();
+    await fuseMarginController.addConnectorContract(connector.address);
     const fuseMarginV1Factory: FuseMarginV1__factory = (await ethers.getContractFactory(
       "contracts/FuseMarginV1.sol:FuseMarginV1",
       owner,
     )) as FuseMarginV1__factory;
     fuseMarginV1 = await fuseMarginV1Factory.deploy(
+      connector.address,
+      uniswapFactoryAddress,
       fuseMarginController.address,
       position.address,
-      uniswapFactoryAddress,
     );
     await fuseMarginController.addMarginContract(fuseMarginV1.address);
 
@@ -115,20 +124,35 @@ describe("FuseMarginV1", () => {
     expect(getGetMarginContracts).to.deep.equal([fuseMarginV1.address]);
     const getApprovedContracts: boolean = await fuseMarginController.approvedContracts(fuseMarginV1.address);
     expect(getApprovedContracts).to.equal(true);
+    const getApprovedConnectors: boolean = await fuseMarginController.approvedConnectors(connector.address);
+    expect(getApprovedConnectors).to.equal(true);
     const [getTokensOfOwner, getPositionsOfOwner]: [BigNumber[], string[]] = await fuseMarginController.tokensOfOwner(
       owner.address,
     );
     expect(getTokensOfOwner).to.deep.equal([]);
     expect(getPositionsOfOwner).to.deep.equal([]);
 
+    await expect(
+      ((await ethers.getContractFactory(
+        "contracts/FuseMarginV1.sol:FuseMarginV1",
+        owner,
+      )) as FuseMarginV1__factory).deploy(
+        ethers.constants.AddressZero,
+        uniswapFactoryAddress,
+        fuseMarginController.address,
+        position.address,
+      ),
+    ).to.be.revertedWith("FuseMarginV1: Not valid connector");
     const fuseMarginController0: string = await position.fuseMarginController();
     expect(fuseMarginController0).to.equal(fuseMarginController.address);
     const getUniswapFactory: string = await fuseMarginV1.uniswapFactory();
     expect(getUniswapFactory).to.equal(uniswapFactoryAddress);
     const getFuseMarginController1: string = await fuseMarginV1.fuseMarginController();
     expect(getFuseMarginController1).to.equal(fuseMarginController.address);
-    const getPositionImplementation: string = await fuseMarginV1.positionImplementation();
+    const getPositionImplementation: string = await fuseMarginV1.positionProxy();
     expect(getPositionImplementation).to.equal(position.address);
+    const getConnector: string = await fuseMarginV1.connector();
+    expect(getConnector).to.equal(connector.address);
   });
 
   it("should revert if not controller owner", async () => {
@@ -255,36 +279,27 @@ describe("FuseMarginV1", () => {
       .to.emit(fuseMarginController, "Transfer")
       .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
     const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
-    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+    const positionProxy: PositionProxy = (await ethers.getContractAt(
+      "contracts/PositionProxy.sol:PositionProxy",
+      getPositions1,
+    )) as PositionProxy;
+    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(positionProxy.address);
     const wbtcAddAmount: BigNumber = BigNumber.from("10000000");
-    await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcAddAmount);
+    await WBTC.connect(impersonateAddressSigner).approve(positionProxy.address, wbtcAddAmount);
+    const addToPositionCall: string = connector.interface.encodeFunctionData("mint", [
+      WBTC.address,
+      fr4WBTC.address,
+      wbtcAddAmount,
+    ]);
     await expect(
-      fuseMarginV1
-        .connect(attacker)
-        .addToPosition(BigNumber.from(0), wbtcAddAmount, false, WBTC.address, fr4WBTC.address, fusePool4, []),
-    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
-    await fuseMarginV1
+      positionProxy["execute(address,bytes,uint256)"](connector.address, addToPositionCall, BigNumber.from(0)),
+    ).to.be.revertedWith("PositionProxy: Not approved user");
+    await positionProxy
       .connect(impersonateAddressSigner)
-      .addToPosition(BigNumber.from(0), wbtcAddAmount, false, WBTC.address, fr4WBTC.address, fusePool4, []);
-    const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
+      ["execute(address,bytes,uint256)"](connector.address, addToPositionCall, BigNumber.from(0));
+    const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(positionProxy.address);
     expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.add(wbtcAddAmount));
-  });
 
-  it("should reenter and add to position", async () => {
-    // why the USDC/DAI Uniswap pair doesnt work: 0x itself routes through there
-    // https://api.0x.org/swap/v1/quote?sellToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&buyToken=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&sellAmount=3000000000000000000000&excludedSources=Uniswap_V2&slippagePercentage=1
-    const quoteData: string =
-      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
-    let amount0Out: BigNumber = daiBorrowAmount;
-    let amount1Out: BigNumber = BigNumber.from(0);
-    let pairToken: string = await uniswapPairDAI.token1();
-    if (DAI.address === pairToken) {
-      amount0Out = BigNumber.from(0);
-      amount1Out = daiBorrowAmount;
-      pairToken = await uniswapPairDAI.token0();
-    }
-    const getBalanceOf0 = await fuseMarginController.balanceOf(impersonateAddress);
-    expect(getBalanceOf0).to.equal(BigNumber.from(0));
     await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
     await expect(
       fuseMarginV1
@@ -299,70 +314,15 @@ describe("FuseMarginV1", () => {
         ),
     )
       .to.emit(fuseMarginController, "Transfer")
-      .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
-    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
-    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
-    const wbtcAddAmount: BigNumber = BigNumber.from("10000000");
-    await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcAddAmount);
+      .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(1));
     await expect(
-      fuseMarginV1
-        .connect(attacker)
-        .addToPosition(BigNumber.from(0), wbtcAddAmount, true, WBTC.address, fr4WBTC.address, fusePool4, [
-          fr4WBTC.address,
-        ]),
-    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
-    await fuseMarginV1
-      .connect(impersonateAddressSigner)
-      .addToPosition(BigNumber.from(0), wbtcAddAmount, true, WBTC.address, fr4WBTC.address, fusePool4, [
-        fr4WBTC.address,
-      ]);
-    const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
-    expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.add(wbtcAddAmount));
-  });
-
-  it("should withdraw from position", async () => {
-    // why the USDC/DAI Uniswap pair doesnt work: 0x itself routes through there
-    // https://api.0x.org/swap/v1/quote?sellToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&buyToken=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&sellAmount=3000000000000000000000&excludedSources=Uniswap_V2&slippagePercentage=1
-    const quoteData: string =
-      "0xd9627aa400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000a2a15d09519be000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000030000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599869584cd00000000000000000000000010000000000000000000000000000000000000110000000000000000000000000000000000000000000000c5867cf578607cf7cd";
-    let amount0Out: BigNumber = daiBorrowAmount;
-    let amount1Out: BigNumber = BigNumber.from(0);
-    let pairToken: string = await uniswapPairDAI.token1();
-    if (DAI.address === pairToken) {
-      amount0Out = BigNumber.from(0);
-      amount1Out = daiBorrowAmount;
-      pairToken = await uniswapPairDAI.token0();
-    }
-    const getBalanceOf0 = await fuseMarginController.balanceOf(impersonateAddress);
-    expect(getBalanceOf0).to.equal(BigNumber.from(0));
-    await WBTC.connect(impersonateAddressSigner).approve(fuseMarginV1.address, wbtcProvidedAmount);
+      positionProxy["execute(address,bytes,uint256)"](connector.address, addToPositionCall, BigNumber.from(1)),
+    ).to.be.revertedWith("PositionProxy: Invalid position");
     await expect(
-      fuseMarginV1
+      positionProxy
         .connect(impersonateAddressSigner)
-        .openPosition(
-          wbtcProvidedAmount,
-          amount0Out,
-          amount1Out,
-          uniswapPairDAI.address,
-          [WBTC.address, DAI.address, pairToken, fusePool4, fr4WBTCAddress, fr4DAIAddress, quoteTo],
-          quoteData,
-        ),
-    )
-      .to.emit(fuseMarginController, "Transfer")
-      .withArgs(ethers.constants.AddressZero, impersonateAddress, BigNumber.from(0));
-    const getPositions1 = await fuseMarginController.positions(BigNumber.from(0));
-    const getfr4WBTCBalance1 = await fr4WBTC.balanceOfUnderlying(getPositions1);
-    const wbtcWithdrawAmount: BigNumber = BigNumber.from("10000000");
-    await expect(
-      fuseMarginV1
-        .connect(attacker)
-        .withdrawFromPosition(BigNumber.from(0), wbtcWithdrawAmount, WBTC.address, fr4WBTC.address),
-    ).to.be.revertedWith("FuseMarginV1: Not owner of position");
-    await fuseMarginV1
-      .connect(impersonateAddressSigner)
-      .withdrawFromPosition(BigNumber.from(0), wbtcWithdrawAmount, WBTC.address, fr4WBTC.address);
-    const getfr4WBTCBalance2 = await fr4WBTC.balanceOfUnderlying(getPositions1);
-    expect(getfr4WBTCBalance2).to.be.gte(getfr4WBTCBalance1.sub(wbtcWithdrawAmount));
+        ["execute(address,bytes,uint256)"](ethers.constants.AddressZero, addToPositionCall, BigNumber.from(0)),
+    ).to.be.revertedWith("PositionProxy: Not valid connector");
   });
 
   it("should close position", async () => {

@@ -1,44 +1,42 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.6;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
-import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
 import { Uniswap } from "./FuseMarginV1/Uniswap.sol";
 import { FuseMarginBase } from "./FuseMarginV1/FuseMarginBase.sol";
-import { IPositionV1 } from "./interfaces/IPositionV1.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import { IFuseMarginController } from "./interfaces/IFuseMarginController.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title FuseMargin contract that handles opening and closing of positions
-contract FuseMarginV1 is Uniswap, FuseMarginBase {
+contract FuseMarginV1 is Uniswap {
     using SafeERC20 for IERC20;
 
     /// @dev Position contract address
-    address public immutable override positionImplementation;
+    address public immutable positionProxy;
     /// @dev FuseMarginController contract ERC721 interface
-    IERC721 internal immutable fuseMarginERC721;
+    IERC721 private immutable fuseMarginERC721;
 
-    /// @param _fuseMarginController FuseMarginController address
-    /// @param _positionImplementation Position address
+    /// @param _connector ConnectorV1 address containing implementation logic
     /// @param _uniswapFactory Uniswap V2 Factory address
+    /// @param _fuseMarginController FuseMarginController address
+    /// @param _positionProxy Position address
     constructor(
+        address _connector,
+        address _uniswapFactory,
         address _fuseMarginController,
-        address _positionImplementation,
-        address _uniswapFactory
-    ) Uniswap(_uniswapFactory) FuseMarginBase(_fuseMarginController) {
+        address _positionProxy
+    ) Uniswap(_connector, _uniswapFactory) FuseMarginBase(_fuseMarginController) {
+        require(
+            IFuseMarginController(_fuseMarginController).approvedConnectors(_connector),
+            "FuseMarginV1: Not valid connector"
+        );
         fuseMarginERC721 = IERC721(_fuseMarginController);
-        positionImplementation = _positionImplementation;
-    }
-
-    /// @dev Checks if caller owns the positions tokenId
-    /// @param tokenId Index of positions array in FuseMarginController contract
-    modifier isOwner(uint256 tokenId) {
-        require(msg.sender == fuseMarginERC721.ownerOf(tokenId), "FuseMarginV1: Not owner of position");
-        _;
+        positionProxy = _positionProxy;
     }
 
     /// @dev Opens a new position, provided an amount of base tokens, must approve base providedAmount before calling
@@ -58,8 +56,7 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         address[7] calldata addresses,
         bytes calldata exchangeData
     ) external override returns (uint256) {
-        address newPosition = Clones.clone(positionImplementation);
-        IPositionV1(newPosition).initialize(fuseMarginController);
+        address newPosition = Clones.clone(positionProxy);
         uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
         IERC20(
             addresses[0] /* base */
@@ -68,45 +65,6 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         bytes memory data = abi.encode(Action.Open, msg.sender, newPosition, addresses, exchangeData);
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
         return tokenId;
-    }
-
-    /// @dev Adds collateral to an existing position
-    /// @param tokenId Position tokenId to close
-    /// @param depositAmount Amount of base to add as collateral
-    /// @param enterMarkets If true, markets will be entered
-    /// @param base Token to add
-    /// @param cBase Equivalent cToken
-    /// @param comptroller Address of Comptroller for the pool
-    /// @param cTokens List of cToken addresses to enable as collateral
-    function addToPosition(
-        uint256 tokenId,
-        uint256 depositAmount,
-        bool enterMarkets,
-        address base,
-        address cBase,
-        address comptroller,
-        address[] calldata cTokens
-    ) external override isOwner(tokenId) {
-        IPositionV1 position = IPositionV1(fuseMarginController.positions(tokenId));
-        if (enterMarkets) {
-            position.enterMarkets(comptroller, cTokens);
-        }
-        IERC20(base).safeTransferFrom(msg.sender, address(position), depositAmount);
-        position.mint(base, cBase, depositAmount);
-    }
-
-    /// @dev Withdraws collateral from an existing position
-    /// @param tokenId Position tokenId to close
-    /// @param redeemAmount Amount of base to withdraw
-    /// @param base Token to withdraw
-    /// @param cBase Equivalent cToken
-    function withdrawFromPosition(
-        uint256 tokenId,
-        uint256 redeemAmount,
-        address base,
-        address cBase
-    ) external override isOwner(tokenId) {
-        IPositionV1(fuseMarginController.positions(tokenId)).redeemUnderlying(base, cBase, msg.sender, redeemAmount);
     }
 
     /// @dev Closes an existing position, caller must own tokenId
@@ -124,7 +82,8 @@ contract FuseMarginV1 is Uniswap, FuseMarginBase {
         address pair,
         address[7] calldata addresses,
         bytes calldata exchangeData
-    ) external override isOwner(tokenId) {
+    ) external override {
+        require(msg.sender == fuseMarginERC721.ownerOf(tokenId), "FuseMarginV1: Not owner of position");
         address positionAddress = fuseMarginController.positions(tokenId);
         fuseMarginController.closePosition(tokenId);
         bytes memory data = abi.encode(Action.Close, msg.sender, positionAddress, addresses, exchangeData);

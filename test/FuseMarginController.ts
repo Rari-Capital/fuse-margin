@@ -4,10 +4,12 @@ import { expect } from "chai";
 import {
   FuseMarginController,
   FuseMarginV1,
-  PositionV1,
+  PositionProxy,
+  ConnectorV1,
   FuseMarginController__factory,
   FuseMarginV1__factory,
-  PositionV1__factory,
+  PositionProxy__factory,
+  ConnectorV1__factory,
   ERC20,
 } from "../typechain";
 import {
@@ -23,7 +25,8 @@ describe("FuseMarginController", () => {
   let attacker: Wallet;
   let fuseMarginController: FuseMarginController;
   let fuseMarginV1Factory: FuseMarginV1__factory;
-  let position: PositionV1;
+  let position: PositionProxy;
+  let connector: ConnectorV1;
   let fuseMarginV1: FuseMarginV1;
   let impersonateAddressSigner: Signer;
   let DAI: ERC20;
@@ -39,20 +42,26 @@ describe("FuseMarginController", () => {
     )) as FuseMarginController__factory;
     fuseMarginController = await fuseMarginControllerFactory.deploy(fuseMarginControllerBaseURI);
 
-    const positionFactory: PositionV1__factory = (await ethers.getContractFactory(
-      "contracts/PositionV1.sol:PositionV1",
+    const positionFactory: PositionProxy__factory = (await ethers.getContractFactory(
+      "contracts/PositionProxy.sol:PositionProxy",
       owner,
-    )) as PositionV1__factory;
-    position = await positionFactory.deploy();
-    await position.initialize(fuseMarginController.address);
+    )) as PositionProxy__factory;
+    position = await positionFactory.deploy(fuseMarginController.address);
+    const connectorFactory: ConnectorV1__factory = (await ethers.getContractFactory(
+      "contracts/ConnectorV1.sol:ConnectorV1",
+      owner,
+    )) as ConnectorV1__factory;
+    connector = await connectorFactory.deploy();
+    await fuseMarginController.addConnectorContract(connector.address);
     fuseMarginV1Factory = (await ethers.getContractFactory(
       "contracts/FuseMarginV1.sol:FuseMarginV1",
       owner,
     )) as FuseMarginV1__factory;
     fuseMarginV1 = await fuseMarginV1Factory.deploy(
+      connector.address,
+      uniswapFactoryAddress,
       fuseMarginController.address,
       position.address,
-      uniswapFactoryAddress,
     );
 
     DAI = (await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", daiAddress)) as ERC20;
@@ -69,6 +78,8 @@ describe("FuseMarginController", () => {
     expect(getOwner).to.equal(owner.address);
     const getMarginContracts: string[] = await fuseMarginController.getMarginContracts();
     expect(getMarginContracts).to.deep.equal([]);
+    const getApprovedConnectors: boolean = await fuseMarginController.approvedConnectors(connector.address);
+    expect(getApprovedConnectors).to.equal(true);
     const [getTokensOfOwner, getPositionsOfOwner]: [BigNumber[], string[]] = await fuseMarginController.tokensOfOwner(
       owner.address,
     );
@@ -94,6 +105,12 @@ describe("FuseMarginController", () => {
         .transferToken(ethers.constants.AddressZero, ethers.constants.AddressZero, BigNumber.from(0)),
     ).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(fuseMarginController.connect(attacker).setBaseURI("")).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
+    await expect(fuseMarginController.connect(attacker).addConnectorContract(connector.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner",
+    );
+    await expect(fuseMarginController.connect(attacker).removeConnectorContract(connector.address)).to.be.revertedWith(
       "Ownable: caller is not the owner",
     );
   });
@@ -144,13 +161,14 @@ describe("FuseMarginController", () => {
     const getGetMarginContracts1: string[] = await fuseMarginController.getMarginContracts();
     expect(getGetMarginContracts1).to.deep.equal([fuseMarginV1.address]);
     await expect(fuseMarginController.addMarginContract(fuseMarginV1.address)).to.be.revertedWith(
-      "FuseMarginController: Already exists",
+      "FuseMarginController: FuseMargin already exists",
     );
 
     const fuseMarginV10: FuseMarginV1 = await fuseMarginV1Factory.deploy(
+      connector.address,
+      uniswapFactoryAddress,
       fuseMarginController.address,
       position.address,
-      uniswapFactoryAddress,
     );
     await expect(fuseMarginController.marginContracts(BigNumber.from(1))).to.be.reverted;
     const getApprovedContract2: boolean = await fuseMarginController.approvedContracts(fuseMarginV10.address);
@@ -165,19 +183,20 @@ describe("FuseMarginController", () => {
     const getGetMarginContracts3: string[] = await fuseMarginController.getMarginContracts();
     expect(getGetMarginContracts3).to.deep.equal([fuseMarginV1.address, fuseMarginV10.address]);
     await expect(fuseMarginController.addMarginContract(fuseMarginV10.address)).to.be.revertedWith(
-      "FuseMarginController: Already exists",
+      "FuseMarginController: FuseMargin already exists",
     );
   });
 
   it("should remove margin contracts", async () => {
     await fuseMarginController.addMarginContract(fuseMarginV1.address);
     const fuseMarginV10: FuseMarginV1 = await fuseMarginV1Factory.deploy(
+      connector.address,
+      uniswapFactoryAddress,
       fuseMarginController.address,
       position.address,
-      uniswapFactoryAddress,
     );
     await expect(fuseMarginController.removeMarginContract(fuseMarginV10.address)).to.be.revertedWith(
-      "FuseMarginController: Does not exist",
+      "FuseMarginController: FuseMargin does not exist",
     );
     await fuseMarginController.addMarginContract(fuseMarginV10.address);
     const getMarginContracts0: string = await fuseMarginController.marginContracts(BigNumber.from(1));
@@ -196,8 +215,53 @@ describe("FuseMarginController", () => {
     const getGetMarginContracts1: string[] = await fuseMarginController.getMarginContracts();
     expect(getGetMarginContracts1).to.deep.equal([fuseMarginV1.address]);
     await expect(fuseMarginController.removeMarginContract(fuseMarginV10.address)).to.be.revertedWith(
-      "FuseMarginController: Does not exist",
+      "FuseMarginController: FuseMargin does not exist",
     );
+  });
+
+  it("should add connector contracts", async () => {
+    const getApprovedContract1: boolean = await fuseMarginController.approvedConnectors(connector.address);
+    expect(getApprovedContract1).to.equal(true);
+    await expect(fuseMarginController.addConnectorContract(connector.address)).to.be.revertedWith(
+      "FuseMarginController: Connector already exists",
+    );
+    const connectorFactory: ConnectorV1__factory = (await ethers.getContractFactory(
+      "contracts/ConnectorV1.sol:ConnectorV1",
+      owner,
+    )) as ConnectorV1__factory;
+    const connector1: ConnectorV1 = await connectorFactory.deploy();
+    const getApprovedContract2: boolean = await fuseMarginController.approvedConnectors(connector1.address);
+    expect(getApprovedContract2).to.equal(false);
+    await expect(fuseMarginController.addConnectorContract(connector1.address))
+      .to.emit(fuseMarginController, "AddConnectorContract")
+      .withArgs(connector1.address, owner.address);
+    const getApprovedContract3: boolean = await fuseMarginController.approvedConnectors(connector1.address);
+    expect(getApprovedContract3).to.equal(true);
+  });
+
+  it("should remove connector contracts", async () => {
+    const getApprovedContract1: boolean = await fuseMarginController.approvedConnectors(connector.address);
+    expect(getApprovedContract1).to.equal(true);
+    await expect(fuseMarginController.addConnectorContract(connector.address)).to.be.revertedWith(
+      "FuseMarginController: Connector already exists",
+    );
+    const connectorFactory: ConnectorV1__factory = (await ethers.getContractFactory(
+      "contracts/ConnectorV1.sol:ConnectorV1",
+      owner,
+    )) as ConnectorV1__factory;
+    const connector1: ConnectorV1 = await connectorFactory.deploy();
+    const getApprovedContract2: boolean = await fuseMarginController.approvedConnectors(connector1.address);
+    expect(getApprovedContract2).to.equal(false);
+    await expect(fuseMarginController.addConnectorContract(connector1.address))
+      .to.emit(fuseMarginController, "AddConnectorContract")
+      .withArgs(connector1.address, owner.address);
+    const getApprovedContract3: boolean = await fuseMarginController.approvedConnectors(connector1.address);
+    expect(getApprovedContract3).to.equal(true);
+    await expect(fuseMarginController.removeConnectorContract(connector1.address))
+      .to.emit(fuseMarginController, "RemoveConnectorContract")
+      .withArgs(connector1.address, owner.address);
+    const getApprovedContract4: boolean = await fuseMarginController.approvedConnectors(connector1.address);
+    expect(getApprovedContract4).to.equal(false);
   });
 
   it("should create new positions", async () => {

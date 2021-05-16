@@ -9,8 +9,8 @@ interface IFuseMarginV1 {
     /// @dev FuseMarginController contract
     function fuseMarginController() external view returns (IFuseMarginController);
 
-    /// @dev Position contract address
-    function positionImplementation() external view returns (address);
+    /// @dev ConnectorV1 address containing implementation logic
+    function connector() external view returns (address);
 
     /// @dev Opens a new position, provided an amount of base tokens, must approve base providedAmount before calling
     /// @param providedAmount Amount of base provided
@@ -29,36 +29,6 @@ interface IFuseMarginV1 {
         address[7] calldata addresses,
         bytes calldata exchangeData
     ) external returns (uint256);
-
-    /// @dev Adds collateral to an existing position
-    /// @param tokenId Position tokenId to close
-    /// @param depositAmount Amount of base to add as collateral
-    /// @param enterMarkets If true, markets will be entered
-    /// @param base Token to add
-    /// @param cBase Equivalent cToken
-    /// @param comptroller Address of Comptroller for the pool
-    /// @param cTokens List of cToken addresses to enable as collateral
-    function addToPosition(
-        uint256 tokenId,
-        uint256 depositAmount,
-        bool enterMarkets,
-        address base,
-        address cBase,
-        address comptroller,
-        address[] calldata cTokens
-    ) external;
-
-    /// @dev Withdraws collateral from an existing position
-    /// @param tokenId Position tokenId to close
-    /// @param redeemAmount Amount of base to withdraw
-    /// @param base Token to withdraw
-    /// @param cBase Equivalent cToken
-    function withdrawFromPosition(
-        uint256 tokenId,
-        uint256 redeemAmount,
-        address base,
-        address cBase
-    ) external;
 
     /// @dev Closes an existing position, caller must own tokenId
     /// @param tokenId Position tokenId to close

@@ -28,9 +28,8 @@ async function main() {
     "contracts/PositionV1.sol:PositionV1",
     deployer,
   )) as PositionV1__factory;
-  const position: PositionV1 = await positionFactory.deploy();
+  const position: PositionV1 = await positionFactory.deploy(fuseMarginController.address);
   console.log("PositionV1:", position.address);
-  await position.initialize(fuseMarginController.address);
   const fuseMarginV1Factory: FuseMarginV1__factory = (await ethers.getContractFactory(
     "contracts/FuseMarginV1.sol:FuseMarginV1",
     deployer,

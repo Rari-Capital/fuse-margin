@@ -14,6 +14,16 @@ interface IFuseMarginController {
     /// @param owner User who removed the contract
     event RemoveMarginContract(address indexed contractAddress, address owner);
 
+    /// @dev Emitted when support of Connector contract is added
+    /// @param contractAddress Address of Connector contract added
+    /// @param owner User who added the contract
+    event AddConnectorContract(address indexed contractAddress, address owner);
+
+    /// @dev Emitted when support of Connector contract is removed
+    /// @param contractAddress Address of Connector contract removed
+    /// @param owner User who removed the contract
+    event RemoveConnectorContract(address indexed contractAddress, address owner);
+
     /// @dev Emitted when a new Base URI is added
     /// @param _metadataBaseURI URL for position metadata
     event SetBaseURI(string indexed _metadataBaseURI);
@@ -35,6 +45,14 @@ interface IFuseMarginController {
     /// @dev Removes support for a new FuseMargin contract, to be called only from owner
     /// @param contractAddress Address of FuseMargin contract
     function removeMarginContract(address contractAddress) external;
+
+    /// @dev Adds support for a new Connector contract, to be called only from owner
+    /// @param contractAddress Address of Connector contract
+    function addConnectorContract(address contractAddress) external;
+
+    /// @dev Removes support for a Connector contract, to be called only from owner
+    /// @param contractAddress Address of Connector contract
+    function removeConnectorContract(address contractAddress) external;
 
     /// @dev Modify NFT URL, to be called only from owner
     /// @param _metadataBaseURI URL for position metadata
@@ -64,6 +82,11 @@ interface IFuseMarginController {
     /// @param contractAddress Address of FuseMargin contract
     /// @return true if approved, false if not
     function approvedContracts(address contractAddress) external view returns (bool);
+
+    /// @dev Check if Connector contract address is approved
+    /// @param contractAddress Address of Connector contract
+    /// @return true if approved, false if not
+    function approvedConnectors(address contractAddress) external view returns (bool);
 
     /// @dev Returns number of positions created
     /// @return Length of positions array

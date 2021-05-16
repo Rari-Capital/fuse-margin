@@ -1,28 +1,33 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.6;
 
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { FuseMarginBase } from "./FuseMarginBase.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
-import { UniswapV2Library } from "../libraries/UniswapV2Library.sol";
-import { IPositionV1 } from "../interfaces/IPositionV1.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IPositionProxy } from "../interfaces/IPositionProxy.sol";
 import { CErc20Interface } from "../interfaces/CErc20Interface.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { UniswapV2Library } from "../libraries/UniswapV2Library.sol";
 
 /// @author Ganesh Gautham Elango
 /// @title Uniswap flash loan contract
-contract Uniswap is IUniswapV2Callee {
+abstract contract Uniswap is FuseMarginBase, IUniswapV2Callee {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /// @dev Enum for differentiating open/close callbacks
     enum Action { Open, Close }
 
+    /// @dev ConnectorV1 address containing implementation logic
+    address public immutable override connector;
     /// @dev Uniswap V2 factory address
     address public immutable uniswapFactory;
 
+    /// @param _connector ConnectorV1 address containing implementation logic
     /// @param _uniswapFactory Uniswap V2 factory address
-    constructor(address _uniswapFactory) {
+    constructor(address _connector, address _uniswapFactory) {
+        connector = _connector;
         uniswapFactory = _uniswapFactory;
     }
 
@@ -91,14 +96,18 @@ contract Uniswap is IUniswapV2Callee {
         )
             .safeTransfer(position, depositAmount);
         // Mint base and borrow quote
-        IPositionV1(position).mintAndBorrow(
-            addresses[3], /* comptroller */
-            addresses[0], /* base */
-            addresses[4], /* cBase */
-            addresses[1], /* quote */
-            addresses[5], /* cQuote */
-            depositAmount,
-            _uniswapLoanFees(amount)
+        IPositionProxy(position).execute(
+            connector,
+            abi.encodeWithSignature(
+                "mintAndBorrow(address,address,address,address,address,uint256,uint256)",
+                addresses[3], /* comptroller */
+                addresses[0], /* base */
+                addresses[4], /* cBase */
+                addresses[1], /* quote */
+                addresses[5], /* cQuote */
+                depositAmount,
+                _uniswapLoanFees(amount)
+            )
         );
         // Send the pair the owed amount + flashFee
         IERC20(
@@ -135,16 +144,20 @@ contract Uniswap is IUniswapV2Callee {
         )
             .safeTransfer(position, repayAmount);
         // Repay quote and redeem base
-        IPositionV1(position).repayAndRedeem(
-            addresses[0], /* base */
-            addresses[4], /* cBase */
-            addresses[1], /* quote */
-            addresses[5], /* cQuote */
-            IERC20(
-                addresses[4] /* cBase */
+        IPositionProxy(position).execute(
+            connector,
+            abi.encodeWithSignature(
+                "repayAndRedeem(address,address,address,address,uint256,uint256)",
+                addresses[0], /* base */
+                addresses[4], /* cBase */
+                addresses[1], /* quote */
+                addresses[5], /* cQuote */
+                IERC20(
+                    addresses[4] /* cBase */
+                )
+                    .balanceOf(position),
+                repayAmount
             )
-                .balanceOf(position),
-            repayAmount
         );
         // Send the pair the owed amount + flashFee
         IERC20(
