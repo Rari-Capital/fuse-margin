@@ -48,8 +48,9 @@ contract FuseMarginController is IFuseMarginController, ERC721, Ownable {
 
     /// @dev Burns the position at the index, to be called only from FuseMargin
     /// @param tokenId tokenId of position to close
-    function closePosition(uint256 tokenId) external override onlyMargin {
+    function closePosition(uint256 tokenId) external override onlyMargin returns (address) {
         _burn(tokenId);
+        return positions[tokenId];
     }
 
     /// @dev Adds support for a new FuseMargin contract, to be called only from owner

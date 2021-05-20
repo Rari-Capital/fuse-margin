@@ -25,7 +25,7 @@ import {
   fr4DAIAddress,
 } from "../scripts/constants/addresses";
 
-describe("PositionV1", () => {
+describe("ConnectorV1", () => {
   let accounts: Signer[];
   let owner: Wallet;
   let attacker: Wallet;

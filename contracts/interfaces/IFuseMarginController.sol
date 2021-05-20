@@ -36,7 +36,7 @@ interface IFuseMarginController {
 
     /// @dev Burns the position at the index, to be called only from FuseMargin
     /// @param tokenId tokenId of position to close
-    function closePosition(uint256 tokenId) external;
+    function closePosition(uint256 tokenId) external returns (address);
 
     /// @dev Adds support for a new FuseMargin contract, to be called only from owner
     /// @param contractAddress Address of FuseMargin contract

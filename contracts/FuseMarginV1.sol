@@ -56,15 +56,14 @@ contract FuseMarginV1 is Uniswap {
         address[7] calldata addresses,
         bytes calldata exchangeData
     ) external override returns (uint256) {
-        address newPosition = Clones.clone(positionProxy);
-        uint256 tokenId = fuseMarginController.newPosition(msg.sender, newPosition);
         IERC20(
             addresses[0] /* base */
         )
             .safeTransferFrom(msg.sender, address(this), providedAmount);
+        address newPosition = Clones.clone(positionProxy);
         bytes memory data = abi.encode(Action.Open, msg.sender, newPosition, addresses, exchangeData);
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
-        return tokenId;
+        return fuseMarginController.newPosition(msg.sender, newPosition);
     }
 
     /// @dev Closes an existing position, caller must own tokenId
@@ -84,8 +83,7 @@ contract FuseMarginV1 is Uniswap {
         bytes calldata exchangeData
     ) external override {
         require(msg.sender == fuseMarginERC721.ownerOf(tokenId), "FuseMarginV1: Not owner of position");
-        address positionAddress = fuseMarginController.positions(tokenId);
-        fuseMarginController.closePosition(tokenId);
+        address positionAddress = fuseMarginController.closePosition(tokenId);
         bytes memory data = abi.encode(Action.Close, msg.sender, positionAddress, addresses, exchangeData);
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
     }
