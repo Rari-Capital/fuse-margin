@@ -17,12 +17,6 @@ abstract contract FuseMarginBase is IFuseMarginV1 {
         fuseMarginController = IFuseMarginController(_fuseMarginController);
     }
 
-    /// @dev Checks if caller is controller owner
-    modifier isControllerOwner() {
-        require(msg.sender == IOwnable(address(fuseMarginController)).owner(), "FuseMarginV1: Not owner of controller");
-        _;
-    }
-
     /// @dev Transfers token balance
     /// @param token Token address
     /// @param to Transfer to address
@@ -31,7 +25,8 @@ abstract contract FuseMarginBase is IFuseMarginV1 {
         address token,
         address to,
         uint256 amount
-    ) external isControllerOwner {
+    ) external {
+        require(msg.sender == IOwnable(address(fuseMarginController)).owner(), "FuseMarginV1: Not owner of controller");
         IERC20(token).transfer(to, amount);
     }
 }
