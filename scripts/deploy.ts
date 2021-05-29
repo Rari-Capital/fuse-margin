@@ -4,10 +4,12 @@ import { Signer, Wallet } from "ethers";
 import {
   FuseMarginController,
   FuseMarginV1,
-  PositionV1,
+  PositionProxy,
+  ConnectorV1,
   FuseMarginController__factory,
   FuseMarginV1__factory,
-  PositionV1__factory,
+  PositionProxy__factory,
+  ConnectorV1__factory,
 } from "../typechain";
 import { fuseMarginControllerBaseURI } from "../scripts/constants/constructors";
 import { uniswapFactoryAddress } from "../scripts/constants/addresses";
@@ -24,20 +26,28 @@ async function main() {
     fuseMarginControllerBaseURI,
   );
   console.log("FuseMarginController:", fuseMarginController.address);
-  const positionFactory: PositionV1__factory = (await ethers.getContractFactory(
-    "contracts/PositionV1.sol:PositionV1",
+  const positionFactory: PositionProxy__factory = (await ethers.getContractFactory(
+    "contracts/PositionProxy.sol:PositionProxy",
     deployer,
-  )) as PositionV1__factory;
-  const position: PositionV1 = await positionFactory.deploy(fuseMarginController.address);
-  console.log("PositionV1:", position.address);
+  )) as PositionProxy__factory;
+  const position: PositionProxy = await positionFactory.deploy(fuseMarginController.address);
+  console.log("PositionProxy:", position.address);
+  const connectorFactory: ConnectorV1__factory = (await ethers.getContractFactory(
+    "contracts/ConnectorV1.sol:ConnectorV1",
+    deployer,
+  )) as ConnectorV1__factory;
+  const connector: ConnectorV1 = await connectorFactory.deploy();
+  console.log("ConnectorV1:", connector.address);
+  await fuseMarginController.addConnectorContract(connector.address);
   const fuseMarginV1Factory: FuseMarginV1__factory = (await ethers.getContractFactory(
     "contracts/FuseMarginV1.sol:FuseMarginV1",
     deployer,
   )) as FuseMarginV1__factory;
   const fuseMarginV1: FuseMarginV1 = await fuseMarginV1Factory.deploy(
+    connector.address,
+    uniswapFactoryAddress,
     fuseMarginController.address,
     position.address,
-    uniswapFactoryAddress,
   );
   console.log("FuseMarginV1:", fuseMarginV1.address);
   await fuseMarginController.addMarginContract(fuseMarginV1.address);
