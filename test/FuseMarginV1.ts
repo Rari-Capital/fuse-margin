@@ -132,17 +132,6 @@ describe("FuseMarginV1", () => {
     expect(getTokensOfOwner).to.deep.equal([]);
     expect(getPositionsOfOwner).to.deep.equal([]);
 
-    await expect(
-      ((await ethers.getContractFactory(
-        "contracts/FuseMarginV1.sol:FuseMarginV1",
-        owner,
-      )) as FuseMarginV1__factory).deploy(
-        ethers.constants.AddressZero,
-        uniswapFactoryAddress,
-        fuseMarginController.address,
-        position.address,
-      ),
-    ).to.be.revertedWith("FuseMarginV1: Not valid connector");
     const fuseMarginController0: string = await position.fuseMarginController();
     expect(fuseMarginController0).to.equal(fuseMarginController.address);
     const getUniswapFactory: string = await fuseMarginV1.uniswapFactory();

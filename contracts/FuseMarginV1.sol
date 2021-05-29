@@ -31,10 +31,6 @@ contract FuseMarginV1 is Uniswap {
         address _fuseMarginController,
         address _positionProxy
     ) Uniswap(_connector, _uniswapFactory) FuseMarginBase(_fuseMarginController) {
-        require(
-            IFuseMarginController(_fuseMarginController).approvedConnectors(_connector),
-            "FuseMarginV1: Not valid connector"
-        );
         fuseMarginERC721 = IERC721(_fuseMarginController);
         positionProxy = _positionProxy;
     }
